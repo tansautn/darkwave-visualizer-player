@@ -9,7 +9,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
   };
 
   return (
-    <div className="w-64 bg-gray-800 text-white p-4 overflow-y-auto">
+    <div className="w-64 bg-black bg-opacity-50 text-white p-4 overflow-y-auto">
       <h2 className="text-xl font-bold mb-4">Playlist</h2>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="playlist">
@@ -23,8 +23,8 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
                       {...provided.draggableProps}
                       className={`flex items-center p-2 mb-2 rounded ${
                         currentTrack && currentTrack.id === track.id
-                          ? 'bg-blue-600'
-                          : 'bg-gray-700'
+                          ? 'bg-blue-600 bg-opacity-50'
+                          : 'bg-gray-700 bg-opacity-50'
                       } ${snapshot.isDragging ? 'opacity-50' : ''}`}
                     >
                       <div {...provided.dragHandleProps} className="mr-2 cursor-move">
