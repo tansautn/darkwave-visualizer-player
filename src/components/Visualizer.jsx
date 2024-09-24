@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
 
-const Visualizer = ({ onError }) => {
+const Visualizer = ({ onError = () => {} }) => {
   const canvasRef = useRef(null);
   const visualizerRef = useRef(null);
   const [error, setError] = useState(null);
