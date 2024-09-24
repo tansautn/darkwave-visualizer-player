@@ -14,6 +14,7 @@ const MusicPlayer = () => {
   const [volume, setVolume] = useState(1);
   const [playlists, setPlaylists] = useLocalStorage('playlists', []);
   const [currentPlaylist, setCurrentPlaylist] = useState(null);
+  const [visualizerError, setVisualizerError] = useState(null);
 
   const audioRef = useRef(null);
   const hlsRef = useRef(null);
@@ -59,7 +60,11 @@ const MusicPlayer = () => {
   return (
     <div className="flex flex-col h-screen bg-black bg-opacity-80 text-white p-4">
       <div className="flex-1">
-        <Visualizer />
+        {visualizerError ? (
+          <div className="text-red-500">{visualizerError}</div>
+        ) : (
+          <Visualizer onError={(error) => setVisualizerError(error)} />
+        )}
       </div>
       <div className="flex items-center justify-between mt-4">
         <Button onClick={() => {}} variant="ghost"><SkipBackIcon /></Button>
