@@ -2,19 +2,27 @@ import React, { useEffect, useRef, useState } from 'react';
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
 
-const Visualizer = () => {
+const Visualizer = ({ onError }) => {
   const canvasRef = useRef(null);
   const visualizerRef = useRef(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = canvas.getContext('webgl2');
+    const context = canvas.getContext('webgl2', { alpha: false });
+
+    if (!context) {
+      const fallbackError = 'WebGL2 is not supported in your browser.';
+      setError(fallbackError);
+      onError(fallbackError);
+      return;
+    }
 
     try {
       const visualizer = butterchurn.createVisualizer(context, {
         width: canvas.width,
         height: canvas.height,
+        pixelRatio: window.devicePixelRatio || 1,
       });
 
       visualizerRef.current = visualizer;
@@ -34,7 +42,9 @@ const Visualizer = () => {
       render();
     } catch (err) {
       console.error('Error initializing visualizer:', err);
-      setError('Failed to initialize visualizer. Please check your browser compatibility.');
+      const errorMessage = 'Failed to initialize visualizer. Please check your browser compatibility.';
+      setError(errorMessage);
+      onError(errorMessage);
     }
 
     return () => {
@@ -42,10 +52,14 @@ const Visualizer = () => {
         visualizerRef.current.destroy();
       }
     };
-  }, []);
+  }, [onError]);
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
+        <p>{error}</p>
+      </div>
+    );
   }
 
   return (

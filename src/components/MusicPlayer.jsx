@@ -57,13 +57,19 @@ const MusicPlayer = () => {
     setIsPlaying(true);
   };
 
+  const handleVisualizerError = (error) => {
+    setVisualizerError(error);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-black bg-opacity-80 text-white p-4">
       <div className="flex-1">
         {visualizerError ? (
-          <div className="text-red-500">{visualizerError}</div>
+          <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
+            <p>{visualizerError}</p>
+          </div>
         ) : (
-          <Visualizer onError={(error) => setVisualizerError(error)} />
+          <Visualizer onError={handleVisualizerError} />
         )}
       </div>
       <div className="flex items-center justify-between mt-4">
