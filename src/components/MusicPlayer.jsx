@@ -8,19 +8,21 @@ import Sidebar from './Sidebar';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
 
+const defaultPlaylist = [
+  { id: '1', title: 'Dang Cay - T.H.wav', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav' },
+  { id: '2', title: 'Tôi là tôi 2013 - Koi Fish.mp3', url: 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3' },
+  { id: '3', title: 'DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3', url: 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3' },
+  { id: '4', title: 'Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3', url: 'https://cdn.zuko.pro/Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3' },
+  { id: '5', title: 'Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3', url: 'https://cdn.zuko.pro/Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3' },
+  { id: '6', title: 'full B\'Small remix.mp3', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3' },
+];
+
 const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
-  const [playlist, setPlaylist] = useLocalStorage('playlist', [
-    { id: '1', title: 'Dang Cay - T.H.wav', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav' },
-    { id: '2', title: 'Tôi là tôi 2013 - Koi Fish.mp3', url: 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3' },
-    { id: '3', title: 'DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3', url: 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3' },
-    { id: '4', title: 'Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3', url: 'https://cdn.zuko.pro/Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3' },
-    { id: '5', title: 'Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3', url: 'https://cdn.zuko.pro/Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3' },
-    { id: '6', title: 'full B\'Small remix.mp3', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3' },
-  ]);
+  const [playlist, setPlaylist] = useLocalStorage('playlist', defaultPlaylist);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
 
@@ -39,9 +41,8 @@ const MusicPlayer = () => {
       } else {
         audioRef.current.src = currentTrack.url;
       }
-      if (isPlaying) {
-        audioRef.current.play();
-      }
+      audioRef.current.play(); // Autoplay when track changes
+      setIsPlaying(true);
     }
   }, [currentTrack]);
 
