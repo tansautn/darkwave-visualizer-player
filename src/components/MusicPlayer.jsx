@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Hls from 'hls.js';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon } from 'lucide-react';
+import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon } from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
 
 const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,9 +22,11 @@ const MusicPlayer = () => {
     { id: '6', title: 'full B\'Small remix.mp3', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3' },
   ]);
   const [showPlaylist, setShowPlaylist] = useState(false);
+  const [playlistName, setPlaylistName] = useState('Default Playlist');
 
   const audioRef = useRef(null);
   const hlsRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (currentTrack) {
@@ -36,8 +39,17 @@ const MusicPlayer = () => {
       } else {
         audioRef.current.src = currentTrack.url;
       }
+      if (isPlaying) {
+        audioRef.current.play();
+      }
     }
   }, [currentTrack]);
+
+  useEffect(() => {
+    if (!currentTrack && playlist.length > 0) {
+      setCurrentTrack(playlist[0]);
+    }
+  }, [playlist]);
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -81,6 +93,37 @@ const MusicPlayer = () => {
     setPlaylist([...playlist, ...newTracks]);
   };
 
+  const handleSoundCloudUpload = async () => {
+    const url = prompt("Enter SoundCloud URL:");
+    if (url) {
+      try {
+        const track = await loadSoundCloudTrack(url);
+        setPlaylist([...playlist, track]);
+      } catch (error) {
+        console.error("Error loading SoundCloud track:", error);
+        alert("Failed to load SoundCloud track. Please check the URL and try again.");
+      }
+    }
+  };
+
+  const handleExportPlaylist = () => {
+    exportPlaylistToM3U8(playlist, playlistName);
+  };
+
+  const handleNextTrack = () => {
+    const currentIndex = playlist.findIndex(track => track.id === currentTrack.id);
+    if (currentIndex < playlist.length - 1) {
+      setCurrentTrack(playlist[currentIndex + 1]);
+    }
+  };
+
+  const handlePreviousTrack = () => {
+    const currentIndex = playlist.findIndex(track => track.id === currentTrack.id);
+    if (currentIndex > 0) {
+      setCurrentTrack(playlist[currentIndex - 1]);
+    }
+  };
+
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
       <Visualizer />
@@ -91,6 +134,8 @@ const MusicPlayer = () => {
             currentTrack={currentTrack}
             onTrackSelect={handleTrackSelect}
             onReorder={handleReorder}
+            playlistName={playlistName}
+            onPlaylistNameChange={setPlaylistName}
           />
         )}
         <div className="flex-1 flex flex-col justify-end p-4">
@@ -100,19 +145,39 @@ const MusicPlayer = () => {
                 <ListIcon className="h-6 w-6" />
               </Button>
               <div className="flex items-center space-x-4">
-                <Button onClick={() => {}} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
+                <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
                 <Button onClick={togglePlay} variant="ghost" className="h-12 w-12 rounded-full">
                   {isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
                 </Button>
-                <Button onClick={() => {}} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
+                <Button onClick={handleNextTrack} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
               </div>
-              <div className="w-24">
-                <Slider
-                  value={[volume * 100]}
-                  max={100}
-                  step={1}
-                  onValueChange={(value) => handleVolumeChange(value[0] / 100)}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileUpload}
+                  accept="audio/*"
+                  ref={fileInputRef}
                 />
+                <Button onClick={() => fileInputRef.current.click()} variant="ghost">
+                  <UploadIcon className="h-6 w-6" />
+                </Button>
+                <Button onClick={handleSoundCloudUpload} variant="ghost">
+                  <CloudIcon className="h-6 w-6" />
+                </Button>
+                <Button onClick={handleExportPlaylist} variant="ghost">
+                  <DownloadIcon className="h-6 w-6" />
+                </Button>
+                <div className="w-24">
+                  <Slider
+                    value={[volume * 100]}
+                    max={100}
+                    step={1}
+                    onValueChange={(value) => handleVolumeChange(value[0] / 100)}
+                  />
+                </div>
               </div>
             </div>
             <Slider
@@ -130,23 +195,11 @@ const MusicPlayer = () => {
           </div>
         </div>
       </div>
-      <input
-        type="file"
-        id="file-upload"
-        className="hidden"
-        multiple
-        onChange={handleFileUpload}
-        accept="audio/*"
-      />
-      <label htmlFor="file-upload" className="absolute top-4 right-4 cursor-pointer">
-        <Button variant="ghost">
-          <UploadIcon className="h-6 w-6" />
-        </Button>
-      </label>
       <audio
         ref={audioRef}
         onTimeUpdate={handleProgress}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={handleNextTrack}
+        autoPlay
       />
     </div>
   );

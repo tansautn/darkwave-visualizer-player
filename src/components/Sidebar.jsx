@@ -1,8 +1,9 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { GripVertical, Music } from 'lucide-react';
+import { GripVertical, Music, CloudIcon } from 'lucide-react';
+import { Input } from "@/components/ui/input";
 
-const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
+const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistName, onPlaylistNameChange }) => {
   const onDragEnd = (result) => {
     if (!result.destination) return;
     onReorder(result.source.index, result.destination.index);
@@ -10,7 +11,13 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
 
   return (
     <div className="w-64 bg-black bg-opacity-50 text-white p-4 overflow-y-auto">
-      <h2 className="text-xl font-bold mb-4">Playlist</h2>
+      <Input
+        type="text"
+        value={playlistName}
+        onChange={(e) => onPlaylistNameChange(e.target.value)}
+        className="mb-4 bg-transparent text-white"
+        placeholder="Playlist Name"
+      />
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="playlist">
           {(provided) => (
@@ -34,7 +41,8 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
                         className="flex-grow cursor-pointer select-text"
                         onClick={() => onTrackSelect(track)}
                       >
-                        {track.type === 'local' ? <Music size={16} className="inline mr-2" /> : null}
+                        {track.type === 'local' ? <Music size={16} className="inline mr-2" /> : 
+                         track.type === 'soundcloud' ? <CloudIcon size={16} className="inline mr-2" /> : null}
                         {track.title}
                       </div>
                     </li>
