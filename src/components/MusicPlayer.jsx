@@ -174,7 +174,7 @@ const MusicPlayer = () => {
 
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
-      <Visualizer />
+      <Visualizer audioRef={audioRef} />
       <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
           <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">
