@@ -8,15 +8,6 @@ import Sidebar from './Sidebar';
 import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
 import { checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist } from '../utils/versionCheck';
 
-const defaultPlaylist = [
-  { id: '1', title: 'Dang Cay - T.H.wav', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav' },
-  { id: '2', title: 'Tôi là tôi 2013 - Koi Fish.mp3', url: 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3' },
-  { id: '3', title: 'DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3', url: 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3' },
-  { id: '4', title: 'Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3', url: 'https://cdn.zuko.pro/Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3' },
-  { id: '5', title: 'Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3', url: 'https://cdn.zuko.pro/Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3' },
-  { id: '6', title: 'full B\'Small remix.mp3', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3' },
-];
-
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
@@ -184,9 +175,9 @@ const MusicPlayer = () => {
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
       <Visualizer />
-      <div className={`absolute inset-0 flex flex-col justify-end transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
+      <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
-          <div className="flex-grow overflow-y-auto bg-black bg-opacity-5">
+          <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">
             <Sidebar
               playlist={playlist}
               currentTrack={currentTrack}
@@ -197,11 +188,11 @@ const MusicPlayer = () => {
             />
           </div>
         )}
-        <div className="bg-black bg-opacity-5 p-4">
+        <div className="bg-black bg-opacity-5 rounded-lg mx-4 mb-4 p-4">
           {error && <div className="text-red-500 mb-2">{error}</div>}
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm">{formatTime(currentTime)}</div>
-            <div className="text-sm">{currentTrack?.title}</div>
+            <div className="text-sm text-center">{currentTrack?.title}</div>
             <div className="text-sm">{formatTime(duration - currentTime)}</div>
           </div>
           <Slider

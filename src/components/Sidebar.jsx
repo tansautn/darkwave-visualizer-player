@@ -10,7 +10,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistNam
   };
 
   return (
-    <div className="w-full h-full bg-black bg-opacity-5 text-white p-4 overflow-y-auto">
+    <div className="h-full p-4">
       <Input
         type="text"
         value={playlistName}
@@ -21,7 +21,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistNam
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="playlist">
           {(provided) => (
-            <ul {...provided.droppableProps} ref={provided.innerRef}>
+            <ul {...provided.droppableProps} ref={provided.innerRef} className="h-[calc(100%-3rem)] overflow-y-auto">
               {playlist.map((track, index) => (
                 <Draggable key={track.id} draggableId={track.id} index={index}>
                   {(provided, snapshot) => (
