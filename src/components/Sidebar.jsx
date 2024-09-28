@@ -10,7 +10,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistNam
   };
 
   return (
-    <div className="w-64 bg-black bg-opacity-50 text-white p-4 overflow-y-auto">
+    <div className="w-full h-full bg-black bg-opacity-5 text-white p-4 overflow-y-auto">
       <Input
         type="text"
         value={playlistName}

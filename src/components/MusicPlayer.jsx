@@ -17,6 +17,12 @@ const defaultPlaylist = [
   { id: '6', title: 'full B\'Small remix.mp3', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3' },
 ];
 
+const formatTime = (time) => {
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60);
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};
+
 const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
@@ -26,10 +32,14 @@ const MusicPlayer = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
   const [error, setError] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isActive, setIsActive] = useState(true);
 
   const audioRef = useRef(null);
   const hlsRef = useRef(null);
   const fileInputRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
@@ -68,6 +78,23 @@ const MusicPlayer = () => {
     }
   }, [playlist, currentTrack]);
 
+  useEffect(() => {
+    const handleActivity = () => {
+      setIsActive(true);
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setIsActive(false), 3000);
+    };
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const togglePlay = () => {
     if (!currentTrack) {
       setError('No track selected');
@@ -85,7 +112,9 @@ const MusicPlayer = () => {
   };
 
   const handleProgress = () => {
-    if (audioRef.current && audioRef.current.duration) {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      setDuration(audioRef.current.duration);
       const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
       setProgress(progress);
     }
@@ -155,73 +184,75 @@ const MusicPlayer = () => {
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
       <Visualizer />
-      <div className="absolute inset-0 flex">
+      <div className={`absolute inset-0 flex flex-col justify-end transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
-          <Sidebar
-            playlist={playlist}
-            currentTrack={currentTrack}
-            onTrackSelect={handleTrackSelect}
-            onReorder={handleReorder}
-            playlistName={playlistName}
-            onPlaylistNameChange={setPlaylistName}
-          />
-        )}
-        <div className="flex-1 flex flex-col justify-end p-4">
-          <div className="bg-black bg-opacity-50 rounded-lg p-4">
-            {error && <div className="text-red-500 mb-2">{error}</div>}
-            <div className="flex items-center justify-between mb-4">
-              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
-                <ListIcon className="h-6 w-6" />
-              </Button>
-              <div className="flex items-center space-x-4">
-                <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
-                <Button onClick={togglePlay} variant="ghost" className="h-12 w-12 rounded-full">
-                  {isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
-                </Button>
-                <Button onClick={handleNextTrack} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  multiple
-                  onChange={handleFileUpload}
-                  accept="audio/*"
-                  ref={fileInputRef}
-                />
-                <Button onClick={() => fileInputRef.current.click()} variant="ghost">
-                  <UploadIcon className="h-6 w-6" />
-                </Button>
-                <Button onClick={handleSoundCloudUpload} variant="ghost">
-                  <CloudIcon className="h-6 w-6" />
-                </Button>
-                <Button onClick={handleExportPlaylist} variant="ghost">
-                  <DownloadIcon className="h-6 w-6" />
-                </Button>
-                <div className="w-24">
-                  <Slider
-                    value={[volume * 100]}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => handleVolumeChange(value[0] / 100)}
-                  />
-                </div>
-              </div>
-            </div>
-            <Slider
-              value={[progress]}
-              max={100}
-              step={1}
-              onValueChange={(value) => {
-                if (audioRef.current) {
-                  const newTime = (value[0] / 100) * audioRef.current.duration;
-                  audioRef.current.currentTime = newTime;
-                }
-              }}
+          <div className="flex-grow overflow-y-auto bg-black bg-opacity-5">
+            <Sidebar
+              playlist={playlist}
+              currentTrack={currentTrack}
+              onTrackSelect={handleTrackSelect}
+              onReorder={handleReorder}
+              playlistName={playlistName}
+              onPlaylistNameChange={setPlaylistName}
             />
-            <div className="mt-2 text-center">
-              {currentTrack && <p className="text-sm">{currentTrack.title}</p>}
+          </div>
+        )}
+        <div className="bg-black bg-opacity-5 p-4">
+          {error && <div className="text-red-500 mb-2">{error}</div>}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm">{formatTime(currentTime)}</div>
+            <div className="text-sm">{currentTrack?.title}</div>
+            <div className="text-sm">{formatTime(duration - currentTime)}</div>
+          </div>
+          <Slider
+            value={[progress]}
+            max={100}
+            step={1}
+            onValueChange={(value) => {
+              if (audioRef.current) {
+                const newTime = (value[0] / 100) * audioRef.current.duration;
+                audioRef.current.currentTime = newTime;
+              }
+            }}
+          />
+          <div className="flex items-center justify-between mt-4">
+            <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
+              <ListIcon className="h-6 w-6" />
+            </Button>
+            <div className="flex items-center space-x-4">
+              <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
+              <Button onClick={togglePlay} variant="ghost" className="h-12 w-12 rounded-full">
+                {isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
+              </Button>
+              <Button onClick={handleNextTrack} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="file"
+                id="file-upload"
+                className="hidden"
+                multiple
+                onChange={handleFileUpload}
+                accept="audio/*"
+                ref={fileInputRef}
+              />
+              <Button onClick={() => fileInputRef.current.click()} variant="ghost">
+                <UploadIcon className="h-6 w-6" />
+              </Button>
+              <Button onClick={handleSoundCloudUpload} variant="ghost">
+                <CloudIcon className="h-6 w-6" />
+              </Button>
+              <Button onClick={handleExportPlaylist} variant="ghost">
+                <DownloadIcon className="h-6 w-6" />
+              </Button>
+              <div className="w-24">
+                <Slider
+                  value={[volume * 100]}
+                  max={100}
+                  step={1}
+                  onValueChange={(value) => handleVolumeChange(value[0] / 100)}
+                />
+              </div>
             </div>
           </div>
         </div>
