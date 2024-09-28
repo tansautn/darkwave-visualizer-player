@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip } from "@/components/ui/tooltip";
-import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon } from 'lucide-react';
+import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon, ShuffleIcon } from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
 import { checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist } from '../utils/versionCheck';
 import { UserGestureProvider, useUserGestureContext } from './UserGestureProvider';
+import { toast } from 'sonner';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
@@ -31,11 +32,12 @@ const MusicPlayerContent = () => {
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [playlist, setPlaylist] = useState([]);
-  const [showPlaylist, setShowPlaylist] = useState(true); // Set default to true
+  const [showPlaylist, setShowPlaylist] = useState(true);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [shufflePresets, setShufflePresets] = useState(false);
 
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -97,6 +99,8 @@ const MusicPlayerContent = () => {
         } else {
           handleSoundCloudUpload();
         }
+      } else if (e.code === 'KeyS') {
+        toggleShufflePresets();
       }
     };
 
@@ -111,11 +115,13 @@ const MusicPlayerContent = () => {
     }
     if (isPlaying) {
       audioRef.current.pause();
+      toast('Paused');
     } else {
       audioRef.current.play().catch(e => {
         console.error('Error playing audio:', e);
         setError('Error playing audio: ' + e.message);
       });
+      toast('Playing');
     }
     setIsPlaying(!isPlaying);
   }, [currentTrack, isPlaying]);
@@ -189,6 +195,12 @@ const MusicPlayerContent = () => {
       setCurrentTrack(playlist[currentIndex - 1]);
     }
   }, [playlist, currentTrack]);
+
+  const toggleShufflePresets = () => {
+    setShufflePresets(!shufflePresets);
+    visualizerRef.current?.toggleShufflePresets();
+    toast(shufflePresets ? 'Shuffle Presets Off' : 'Shuffle Presets On');
+  };
 
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
@@ -266,6 +278,11 @@ const MusicPlayerContent = () => {
               <Tooltip content="Export Playlist" delayDuration={1000}>
                 <Button onClick={handleExportPlaylist} variant="ghost">
                   <DownloadIcon className="h-6 w-6" />
+                </Button>
+              </Tooltip>
+              <Tooltip content="Toggle Shuffle Presets" delayDuration={1000}>
+                <Button onClick={toggleShufflePresets} variant="ghost">
+                  <ShuffleIcon className="h-6 w-6" color={shufflePresets ? "white" : "gray"} />
                 </Button>
               </Tooltip>
               <div className="w-24">
