@@ -33,39 +33,26 @@ const MusicPlayer = () => {
 
   useEffect(() => {
     if (currentTrack) {
-      setError(null); // Reset error state when changing tracks
-      if (currentTrack.type === 'hls') {
-        if (Hls.isSupported()) {
-          hlsRef.current = new Hls();
-          hlsRef.current.loadSource(currentTrack.url);
-          hlsRef.current.attachMedia(audioRef.current);
-          hlsRef.current.on(Hls.Events.ERROR, (event, data) => {
-            console.error('HLS error:', data);
-            setError('Error loading HLS stream');
-          });
-        } else if (audioRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-          audioRef.current.src = currentTrack.url;
-        } else {
-          setError('HLS is not supported in this browser');
-        }
-      } else {
+      setError(null);
+      if (audioRef.current) {
         audioRef.current.src = currentTrack.url;
+        audioRef.current.load();
+        if (isPlaying) {
+          audioRef.current.play().catch(e => {
+            console.error('Error playing audio:', e);
+            setError('Error playing audio: ' + e.message);
+            setIsPlaying(false);
+          });
+        }
       }
-      audioRef.current.load(); // Explicitly load the audio
-      audioRef.current.play().catch(e => {
-        console.error('Error playing audio:', e);
-        setError('Error playing audio: ' + e.message);
-        setIsPlaying(false);
-      });
-      setIsPlaying(true);
     }
-  }, [currentTrack]);
+  }, [currentTrack, isPlaying]);
 
   useEffect(() => {
     if (!currentTrack && playlist.length > 0) {
       setCurrentTrack(playlist[0]);
     }
-  }, [playlist]);
+  }, [playlist, currentTrack]);
 
   const togglePlay = () => {
     if (!currentTrack) {
@@ -84,7 +71,7 @@ const MusicPlayer = () => {
   };
 
   const handleProgress = () => {
-    if (audioRef.current.duration) {
+    if (audioRef.current && audioRef.current.duration) {
       const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
       setProgress(progress);
     }
@@ -92,7 +79,9 @@ const MusicPlayer = () => {
 
   const handleVolumeChange = (newVolume) => {
     setVolume(newVolume);
-    audioRef.current.volume = newVolume;
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
   };
 
   const handleTrackSelect = (track) => {
@@ -211,8 +200,10 @@ const MusicPlayer = () => {
               max={100}
               step={1}
               onValueChange={(value) => {
-                const newTime = (value[0] / 100) * audioRef.current.duration;
-                audioRef.current.currentTime = newTime;
+                if (audioRef.current) {
+                  const newTime = (value[0] / 100) * audioRef.current.duration;
+                  audioRef.current.currentTime = newTime;
+                }
               }}
             />
             <div className="mt-2 text-center">
