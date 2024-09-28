@@ -48,11 +48,14 @@ const Visualizer = ({ audioRef }) => {
     initVisualizer();
 
     return () => {
-      if (visualizerRef.current) {
-        visualizerRef.current.destroy();
-      }
       if (audioContextRef.current) {
         audioContextRef.current.close();
+      }
+      if (sourceNodeRef.current) {
+        sourceNodeRef.current.disconnect();
+      }
+      if (delayedAudibleRef.current) {
+        delayedAudibleRef.current.disconnect();
       }
     };
   }, []);
