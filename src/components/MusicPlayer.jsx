@@ -7,6 +7,7 @@ import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
 import { checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist } from '../utils/versionCheck';
+import { TopProvider, useTopContext } from './TopProvider';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
@@ -23,7 +24,8 @@ const defaultPlaylist = [
   { id: '6', title: 'full B\'Small remix', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3', type: 'remote' },
 ];
 
-const MusicPlayer = () => {
+const MusicPlayerContent = () => {
+  const { isActive } = useTopContext();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [progress, setProgress] = useState(0);
@@ -34,11 +36,9 @@ const MusicPlayer = () => {
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isActive, setIsActive] = useState(true);
 
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
-  const timeoutRef = useRef(null);
   const visualizerRef = useRef(null);
 
   useEffect(() => {
@@ -77,23 +77,6 @@ const MusicPlayer = () => {
       setCurrentTrack(playlist[0]);
     }
   }, [playlist, currentTrack]);
-
-  useEffect(() => {
-    const handleActivity = () => {
-      setIsActive(true);
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setIsActive(false), 3000);
-    };
-
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      clearTimeout(timeoutRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -310,5 +293,11 @@ const MusicPlayer = () => {
     </div>
   );
 };
+
+const MusicPlayer = () => (
+  <TopProvider>
+    <MusicPlayerContent />
+  </TopProvider>
+);
 
 export default MusicPlayer;
