@@ -263,6 +263,7 @@ const MusicPlayer = () => {
           console.error('Audio error:', e);
           setError('Error loading audio: ' + e.target.error.message);
         }}
+        crossOrigin="anonymous"
       />
     </div>
   );
