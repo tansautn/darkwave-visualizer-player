@@ -5,8 +5,8 @@ import { Slider } from "@/components/ui/slider";
 import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon } from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
+import { checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist } from '../utils/versionCheck';
 
 const defaultPlaylist = [
   { id: '1', title: 'Dang Cay - T.H.wav', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav' },
@@ -22,7 +22,7 @@ const MusicPlayer = () => {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
-  const [playlist, setPlaylist] = useLocalStorage('playlist', defaultPlaylist);
+  const [playlist, setPlaylist] = useState([]);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
   const [error, setError] = useState(null);
@@ -30,6 +30,20 @@ const MusicPlayer = () => {
   const audioRef = useRef(null);
   const hlsRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const wasReset = checkAndClearPlaylist();
+    const storedPlaylist = getStoredPlaylist();
+    if (wasReset || !storedPlaylist) {
+      setPlaylist(defaultPlaylist);
+    } else {
+      setPlaylist(storedPlaylist);
+    }
+  }, []);
+
+  useEffect(() => {
+    setStoredPlaylist(playlist);
+  }, [playlist]);
 
   useEffect(() => {
     if (currentTrack) {
