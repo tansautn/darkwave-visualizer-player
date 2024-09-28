@@ -25,6 +25,7 @@ const MusicPlayer = () => {
   const [playlist, setPlaylist] = useLocalStorage('playlist', defaultPlaylist);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
+  const [error, setError] = useState(null);
 
   const audioRef = useRef(null);
   const hlsRef = useRef(null);
@@ -32,16 +33,30 @@ const MusicPlayer = () => {
 
   useEffect(() => {
     if (currentTrack) {
+      setError(null); // Reset error state when changing tracks
       if (currentTrack.type === 'hls') {
         if (Hls.isSupported()) {
           hlsRef.current = new Hls();
           hlsRef.current.loadSource(currentTrack.url);
           hlsRef.current.attachMedia(audioRef.current);
+          hlsRef.current.on(Hls.Events.ERROR, (event, data) => {
+            console.error('HLS error:', data);
+            setError('Error loading HLS stream');
+          });
+        } else if (audioRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+          audioRef.current.src = currentTrack.url;
+        } else {
+          setError('HLS is not supported in this browser');
         }
       } else {
         audioRef.current.src = currentTrack.url;
       }
-      audioRef.current.play(); // Autoplay when track changes
+      audioRef.current.load(); // Explicitly load the audio
+      audioRef.current.play().catch(e => {
+        console.error('Error playing audio:', e);
+        setError('Error playing audio: ' + e.message);
+        setIsPlaying(false);
+      });
       setIsPlaying(true);
     }
   }, [currentTrack]);
@@ -53,17 +68,26 @@ const MusicPlayer = () => {
   }, [playlist]);
 
   const togglePlay = () => {
+    if (!currentTrack) {
+      setError('No track selected');
+      return;
+    }
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(e => {
+        console.error('Error playing audio:', e);
+        setError('Error playing audio: ' + e.message);
+      });
     }
     setIsPlaying(!isPlaying);
   };
 
   const handleProgress = () => {
-    const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
-    setProgress(progress);
+    if (audioRef.current.duration) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(progress);
+    }
   };
 
   const handleVolumeChange = (newVolume) => {
@@ -102,7 +126,7 @@ const MusicPlayer = () => {
         setPlaylist([...playlist, track]);
       } catch (error) {
         console.error("Error loading SoundCloud track:", error);
-        alert("Failed to load SoundCloud track. Please check the URL and try again.");
+        setError("Failed to load SoundCloud track. Please check the URL and try again.");
       }
     }
   };
@@ -141,6 +165,7 @@ const MusicPlayer = () => {
         )}
         <div className="flex-1 flex flex-col justify-end p-4">
           <div className="bg-black bg-opacity-50 rounded-lg p-4">
+            {error && <div className="text-red-500 mb-2">{error}</div>}
             <div className="flex items-center justify-between mb-4">
               <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
                 <ListIcon className="h-6 w-6" />
@@ -200,7 +225,10 @@ const MusicPlayer = () => {
         ref={audioRef}
         onTimeUpdate={handleProgress}
         onEnded={handleNextTrack}
-        autoPlay
+        onError={(e) => {
+          console.error('Audio error:', e);
+          setError('Error loading audio: ' + e.target.error.message);
+        }}
       />
     </div>
   );
