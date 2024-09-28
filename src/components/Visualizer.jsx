@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
 
-const Visualizer = ({ audioRef }) => {
+const Visualizer = forwardRef(({ audioRef }, ref) => {
   const canvasRef = useRef(null);
   const visualizerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -12,6 +12,11 @@ const Visualizer = ({ audioRef }) => {
   const [presets, setPresets] = useState({});
   const [presetKeys, setPresetKeys] = useState([]);
   const [presetIndex, setPresetIndex] = useState(0);
+
+  useImperativeHandle(ref, () => ({
+    nextPreset: () => nextPreset(),
+    prevPreset: () => prevPreset(),
+  }));
 
   useEffect(() => {
     const initVisualizer = () => {
@@ -57,7 +62,6 @@ const Visualizer = ({ audioRef }) => {
       if (delayedAudibleRef.current) {
         delayedAudibleRef.current.disconnect();
       }
-      // Remove the call to visualizerRef.current.destroy()
     };
   }, []);
 
@@ -100,6 +104,14 @@ const Visualizer = ({ audioRef }) => {
     }
   };
 
+  const prevPreset = (blendTime = 5.7) => {
+    if (visualizerRef.current && presetKeys.length > 0) {
+      const newIndex = (presetIndex - 1 + presetKeys.length) % presetKeys.length;
+      setPresetIndex(newIndex);
+      visualizerRef.current.loadPreset(presets[presetKeys[newIndex]], blendTime);
+    }
+  };
+
   if (error) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
@@ -116,6 +128,6 @@ const Visualizer = ({ audioRef }) => {
       height={600}
     />
   );
-};
+});
 
 export default Visualizer;

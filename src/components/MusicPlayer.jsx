@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip } from "@/components/ui/tooltip";
 import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon } from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
@@ -38,6 +39,7 @@ const MusicPlayer = () => {
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
+  const visualizerRef = useRef(null);
 
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
@@ -93,7 +95,33 @@ const MusicPlayer = () => {
     };
   }, []);
 
-  const togglePlay = () => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === 'ArrowLeft') {
+        visualizerRef.current?.prevPreset();
+      } else if (e.code === 'ArrowRight') {
+        visualizerRef.current?.nextPreset();
+      } else if (e.code === 'ArrowUp') {
+        handleNextTrack();
+      } else if (e.code === 'ArrowDown') {
+        handlePreviousTrack();
+      } else if (e.code === 'Enter') {
+        if (e.shiftKey) {
+          fileInputRef.current?.click();
+        } else {
+          handleSoundCloudUpload();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const togglePlay = useCallback(() => {
     if (!currentTrack) {
       setError('No track selected');
       return;
@@ -107,7 +135,7 @@ const MusicPlayer = () => {
       });
     }
     setIsPlaying(!isPlaying);
-  };
+  }, [currentTrack, isPlaying]);
 
   const handleProgress = () => {
     if (audioRef.current) {
@@ -165,23 +193,23 @@ const MusicPlayer = () => {
     exportPlaylistToM3U8(playlist, playlistName);
   };
 
-  const handleNextTrack = () => {
+  const handleNextTrack = useCallback(() => {
     const currentIndex = playlist.findIndex(track => track.id === currentTrack.id);
     if (currentIndex < playlist.length - 1) {
       setCurrentTrack(playlist[currentIndex + 1]);
     }
-  };
+  }, [playlist, currentTrack]);
 
-  const handlePreviousTrack = () => {
+  const handlePreviousTrack = useCallback(() => {
     const currentIndex = playlist.findIndex(track => track.id === currentTrack.id);
     if (currentIndex > 0) {
       setCurrentTrack(playlist[currentIndex - 1]);
     }
-  };
+  }, [playlist, currentTrack]);
 
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
-      <Visualizer audioRef={audioRef} />
+      <Visualizer audioRef={audioRef} ref={visualizerRef} />
       <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
           <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">
@@ -214,15 +242,23 @@ const MusicPlayer = () => {
             }}
           />
           <div className="flex items-center justify-between mt-4">
-            <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
-              <ListIcon className="h-6 w-6" />
-            </Button>
-            <div className="flex items-center space-x-4">
-              <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
-              <Button onClick={togglePlay} variant="ghost" className="h-12 w-12 rounded-full">
-                {isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
+            <Tooltip content="Toggle Playlist" delayDuration={1000}>
+              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
+                <ListIcon className="h-6 w-6" />
               </Button>
-              <Button onClick={handleNextTrack} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
+            </Tooltip>
+            <div className="flex items-center space-x-4">
+              <Tooltip content="Previous Track" delayDuration={1000}>
+                <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
+              </Tooltip>
+              <Tooltip content={isPlaying ? "Pause" : "Play"} delayDuration={1000}>
+                <Button onClick={togglePlay} variant="ghost" className="h-12 w-12 rounded-full">
+                  {isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
+                </Button>
+              </Tooltip>
+              <Tooltip content="Next Track" delayDuration={1000}>
+                <Button onClick={handleNextTrack} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
+              </Tooltip>
             </div>
             <div className="flex items-center space-x-2">
               <input
@@ -234,15 +270,21 @@ const MusicPlayer = () => {
                 accept="audio/*"
                 ref={fileInputRef}
               />
-              <Button onClick={() => fileInputRef.current.click()} variant="ghost">
-                <UploadIcon className="h-6 w-6" />
-              </Button>
-              <Button onClick={handleSoundCloudUpload} variant="ghost">
-                <CloudIcon className="h-6 w-6" />
-              </Button>
-              <Button onClick={handleExportPlaylist} variant="ghost">
-                <DownloadIcon className="h-6 w-6" />
-              </Button>
+              <Tooltip content="Upload Local File" delayDuration={1000}>
+                <Button onClick={() => fileInputRef.current.click()} variant="ghost">
+                  <UploadIcon className="h-6 w-6" />
+                </Button>
+              </Tooltip>
+              <Tooltip content="Add SoundCloud Track" delayDuration={1000}>
+                <Button onClick={handleSoundCloudUpload} variant="ghost">
+                  <CloudIcon className="h-6 w-6" />
+                </Button>
+              </Tooltip>
+              <Tooltip content="Export Playlist" delayDuration={1000}>
+                <Button onClick={handleExportPlaylist} variant="ghost">
+                  <DownloadIcon className="h-6 w-6" />
+                </Button>
+              </Tooltip>
               <div className="w-24">
                 <Slider
                   value={[volume * 100]}
