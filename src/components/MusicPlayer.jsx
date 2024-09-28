@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Hls from 'hls.js';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon } from 'lucide-react';
@@ -37,7 +36,6 @@ const MusicPlayer = () => {
   const [isActive, setIsActive] = useState(true);
 
   const audioRef = useRef(null);
-  const hlsRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
 

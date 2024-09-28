@@ -57,6 +57,7 @@ const Visualizer = ({ audioRef }) => {
       if (delayedAudibleRef.current) {
         delayedAudibleRef.current.disconnect();
       }
+      // Remove the call to visualizerRef.current.destroy()
     };
   }, []);
 
