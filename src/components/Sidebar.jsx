@@ -1,6 +1,6 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Music } from 'lucide-react';
 
 const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
   const onDragEnd = (result) => {
@@ -34,6 +34,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder }) => {
                         className="flex-grow cursor-pointer select-text"
                         onClick={() => onTrackSelect(track)}
                       >
+                        {track.type === 'local' ? <Music size={16} className="inline mr-2" /> : null}
                         {track.title}
                       </div>
                     </li>
