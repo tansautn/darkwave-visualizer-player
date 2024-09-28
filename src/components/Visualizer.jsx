@@ -19,7 +19,6 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
   const previousPresetsRef = useRef([]);
   const cycleIntervalRef = useRef(null);
   const initTimeoutRef = useRef(null);
-  const isAudioContextClosedRef = useRef(false);
 
   useImperativeHandle(ref, () => ({
     nextPreset: () => nextPreset(),
@@ -42,9 +41,8 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
     }
 
     try {
-      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-        isAudioContextClosedRef.current = false;
       }
       
       const allPresets = butterchurnPresets.getPresets();
@@ -76,16 +74,13 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
     return () => {
       clearTimeout(initTimeoutRef.current);
       clearInterval(cycleIntervalRef.current);
-      if (audioContextRef.current && !isAudioContextClosedRef.current) {
-        audioContextRef.current.close();
-        isAudioContextClosedRef.current = true;
-      }
       if (sourceNodeRef.current) {
         sourceNodeRef.current.disconnect();
       }
       if (delayedAudibleRef.current) {
         delayedAudibleRef.current.disconnect();
       }
+      // We no longer close the AudioContext here
     };
   }, [initVisualizer]);
 
