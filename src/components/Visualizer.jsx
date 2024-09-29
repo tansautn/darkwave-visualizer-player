@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
 import { useUserGestureContext } from './UserGestureProvider';
@@ -27,7 +27,7 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
     toggleShufflePresets: () => setShufflePresets(prev => !prev),
   }));
 
-  const initVisualizer = useCallback(() => {
+  const initVisualizer = () => {
     if (!isActive) {
       initTimeoutRef.current = setTimeout(initVisualizer, 100);
       return;
@@ -68,7 +68,7 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
       console.error('Error initializing visualizer:', err);
       setError('Failed to initialize visualizer. Please check your browser compatibility.');
     }
-  }, [isActive]);
+  };
 
   useEffect(() => {
     initVisualizer();
@@ -87,9 +87,9 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
         delayedAudibleRef.current.disconnect();
       }
     };
-  }, [initVisualizer]);
+  }, [isActive]);
 
-  const connectToAudioAnalyzer = useCallback(() => {
+  const connectToAudioAnalyzer = () => {
     if (!audioRef.current || !audioContextRef.current || !visualizerRef.current) return;
 
     if (delayedAudibleRef.current) {
@@ -104,9 +104,9 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
     delayedAudibleRef.current.connect(audioContextRef.current.destination);
 
     visualizerRef.current.connectAudio(delayedAudibleRef.current);
-  }, [audioRef]);
+  };
 
-  const startRenderer = useCallback(() => {
+  const startRenderer = () => {
     const renderFrame = () => {
       if (visualizerRef.current) {
         visualizerRef.current.render();
@@ -114,9 +114,9 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
       requestAnimationFrame(renderFrame);
     };
     renderFrame();
-  }, []);
+  };
 
-  const nextPreset = useCallback((blendTime = 5.7) => {
+  const nextPreset = (blendTime = 5.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
       let newIndex;
       if (shufflePresets) {
@@ -130,9 +130,9 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       toast(presetName, { duration: 2000 });
     }
-  }, [presetKeys, presetIndex, shufflePresets, presets]);
+  };
 
-  const prevPreset = useCallback((blendTime = 5.7) => {
+  const prevPreset = (blendTime = 5.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
       let newIndex;
       if (previousPresetsRef.current.length > 0) {
@@ -145,13 +145,13 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       toast(presetName, { duration: 2000 });
     }
-  }, [presetKeys, presetIndex, presets]);
+  };
 
-  const startPresetCycle = useCallback(() => {
+  const startPresetCycle = () => {
     cycleIntervalRef.current = setInterval(() => {
       nextPreset();
-    }, 18000); // Change preset every 18 seconds
-  }, [nextPreset]);
+    }, 30000); // Change preset every 30 seconds
+  };
 
   if (error) {
     return (
