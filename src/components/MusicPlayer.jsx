@@ -7,7 +7,7 @@ import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
 import { checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist } from '../utils/versionCheck';
-import { UserGestureProvider, useUserGestureContext } from './UserGestureProvider';
+import { TopProvider, useTopContext } from './TopProvider';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
@@ -25,13 +25,13 @@ const defaultPlaylist = [
 ];
 
 const MusicPlayerContent = () => {
-  const { isActive } = useUserGestureContext();
+  const { isActive } = useTopContext();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [playlist, setPlaylist] = useState([]);
-  const [showPlaylist, setShowPlaylist] = useState(true); // Set default to true
+  const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -295,9 +295,9 @@ const MusicPlayerContent = () => {
 };
 
 const MusicPlayer = () => (
-  <UserGestureProvider>
+  <TopProvider>
     <MusicPlayerContent />
-  </UserGestureProvider>
+  </TopProvider>
 );
 
 export default MusicPlayer;
