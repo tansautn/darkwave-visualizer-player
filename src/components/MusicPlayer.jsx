@@ -15,9 +15,9 @@ const formatTime = (time) => {
 };
 
 const defaultPlaylist = [
-  { id: '1', title: 'Dang Cay - T.H', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav', type: 'remote' },
-  { id: '2', title: 'Tôi là tôi 2013 - Koi Fish', url: 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3', type: 'remote' },
   { id: '3', title: 'DJ Blue Sky - Han Mac Tu (Remix)', url: 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3', type: 'remote' },
+  { id: '2', title: 'Tôi là tôi 2013 - Koi Fish', url: 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3', type: 'remote' },
+  { id: '1', title: 'Dang Cay - T.H', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav', type: 'remote' },
   { id: '4', title: 'Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix', url: 'https://cdn.zuko.pro/Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3', type: 'remote' },
   { id: '5', title: 'Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky', url: 'https://cdn.zuko.pro/Neu Em Duoc Lua Chon (Le Quyen) - Ben Heineken ft Tricky.mp3', type: 'remote' },
   { id: '6', title: 'full B\'Small remix', url: 'https://cdn.zuko.pro/full B\'Small remix.mp3', type: 'remote' },
@@ -29,7 +29,7 @@ const MusicPlayer = () => {
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [playlist, setPlaylist] = useState([]);
-  const [showPlaylist, setShowPlaylist] = useState(false);
+  const [showPlaylist, setShowPlaylist] = useState(true);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -40,7 +40,8 @@ const MusicPlayer = () => {
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
   const visualizerRef = useRef(null);
-
+  const cycleIntervalRef = useRef(null);
+  const initTimeoutRef = useRef(null);
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
     const storedPlaylist = getStoredPlaylist();
@@ -209,7 +210,7 @@ const MusicPlayer = () => {
 
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
-      <Visualizer audioRef={audioRef} ref={visualizerRef} />
+      <Visualizer audioRef={audioRef} ref={visualizerRef} cycleIntervalRef={cycleIntervalRef} initTimeoutRef={initTimeoutRef} />
       <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
           <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">
@@ -242,11 +243,32 @@ const MusicPlayer = () => {
             }}
           />
           <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center space-x-2">
             <Tooltip content="Toggle Playlist" delayDuration={1000}>
               <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
                 <ListIcon className="h-6 w-6" />
               </Button>
             </Tooltip>
+              <input
+              type="file"
+              id="file-upload"
+              className="hidden"
+              multiple
+              onChange={handleFileUpload}
+              accept="audio/*"
+              ref={fileInputRef}
+              />
+              <Tooltip content="Upload Local File" delayDuration={1000}>
+                <Button onClick={() => fileInputRef.current.click()} variant="ghost">
+                  <UploadIcon className="h-6 w-6" />
+                </Button>
+              </Tooltip>
+              <Tooltip content="Add SoundCloud Track" delayDuration={1000}>
+                <Button onClick={handleSoundCloudUpload} variant="ghost">
+                  <CloudIcon className="h-6 w-6" />
+                </Button>
+              </Tooltip>
+            </div>
             <div className="flex items-center space-x-4">
               <Tooltip content="Previous Track" delayDuration={1000}>
                 <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
@@ -261,25 +283,6 @@ const MusicPlayer = () => {
               </Tooltip>
             </div>
             <div className="flex items-center space-x-2">
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                multiple
-                onChange={handleFileUpload}
-                accept="audio/*"
-                ref={fileInputRef}
-              />
-              <Tooltip content="Upload Local File" delayDuration={1000}>
-                <Button onClick={() => fileInputRef.current.click()} variant="ghost">
-                  <UploadIcon className="h-6 w-6" />
-                </Button>
-              </Tooltip>
-              <Tooltip content="Add SoundCloud Track" delayDuration={1000}>
-                <Button onClick={handleSoundCloudUpload} variant="ghost">
-                  <CloudIcon className="h-6 w-6" />
-                </Button>
-              </Tooltip>
               <Tooltip content="Export Playlist" delayDuration={1000}>
                 <Button onClick={handleExportPlaylist} variant="ghost">
                   <DownloadIcon className="h-6 w-6" />
@@ -287,10 +290,10 @@ const MusicPlayer = () => {
               </Tooltip>
               <div className="w-24">
                 <Slider
-                  value={[volume * 100]}
-                  max={100}
-                  step={1}
-                  onValueChange={(value) => handleVolumeChange(value[0] / 100)}
+                value={[ volume * 100 ]}
+                max={100}
+                step={1}
+                onValueChange={(value) => handleVolumeChange(value[ 0 ] / 100)}
                 />
               </div>
             </div>
@@ -298,14 +301,14 @@ const MusicPlayer = () => {
         </div>
       </div>
       <audio
-        ref={audioRef}
-        onTimeUpdate={handleProgress}
-        onEnded={handleNextTrack}
-        onError={(e) => {
-          console.error('Audio error:', e);
-          setError('Error loading audio: ' + e.target.error.message);
-        }}
-        crossOrigin="anonymous"
+      ref={audioRef}
+      onTimeUpdate={handleProgress}
+      onEnded={handleNextTrack}
+      onError={(e) => {
+        console.error('Audio error:', e);
+        setError('Error loading audio: ' + e.target.error.message);
+      }}
+      crossOrigin="anonymous"
       />
     </div>
   );

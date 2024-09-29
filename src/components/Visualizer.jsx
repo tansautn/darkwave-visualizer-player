@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
+import {toast} from 'sonner';
 
-const Visualizer = forwardRef(({ audioRef }, ref) => {
+const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, ref) => {
   const canvasRef = useRef(null);
   const visualizerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -12,14 +13,22 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
   const [presets, setPresets] = useState({});
   const [presetKeys, setPresetKeys] = useState([]);
   const [presetIndex, setPresetIndex] = useState(0);
-
+  const [shufflePresets, setShufflePresets] = useState(true);
+  const previousPresetsRef = useRef([]);
   useImperativeHandle(ref, () => ({
     nextPreset: () => nextPreset(),
     prevPreset: () => prevPreset(),
+    toggleShufflePresets: () => setShufflePresets(prev => !prev),
   }));
 
   useEffect(() => {
     const initVisualizer = () => {
+//      if (!isActive) {
+//        initTimeoutRef.current = setTimeout(initVisualizer, 100);
+//        return;
+//      }
+//      clearTimeout(initTimeoutRef.current);
+
       const canvas = canvasRef.current;
       if (!canvas) {
         setError('Canvas element not found');
@@ -44,6 +53,7 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
 
         nextPreset(0);
         startRenderer();
+        startPresetCycle();
       } catch (err) {
         console.error('Error initializing visualizer:', err);
         setError('Failed to initialize visualizer. Please check your browser compatibility.');
@@ -96,22 +106,63 @@ const Visualizer = forwardRef(({ audioRef }, ref) => {
     renderFrame();
   };
 
-  const nextPreset = (blendTime = 5.7) => {
+//  const nextPreset = (blendTime = 5.7) => {
+//    if (visualizerRef.current && presetKeys.length > 0) {
+//      const newIndex = (presetIndex + 1) % presetKeys.length;
+//      setPresetIndex(newIndex);
+//      visualizerRef.current.loadPreset(presets[presetKeys[newIndex]], blendTime);
+//    }
+//  };
+//
+//  const prevPreset = (blendTime = 5.7) => {
+//    if (visualizerRef.current && presetKeys.length > 0) {
+//      const newIndex = (presetIndex - 1 + presetKeys.length) % presetKeys.length;
+//      setPresetIndex(newIndex);
+//      visualizerRef.current.loadPreset(presets[presetKeys[newIndex]], blendTime);
+//    }
+//  };
+  const nextPreset = useCallback((blendTime = 5.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
-      const newIndex = (presetIndex + 1) % presetKeys.length;
+      let newIndex;
+      if (shufflePresets) {
+        console.info('shuffling presets');
+        newIndex = Math.floor(Math.random() * presetKeys.length);
+      } else {
+        console.info('next preset');
+        newIndex = (presetIndex + 1) % presetKeys.length;
+      }
       setPresetIndex(newIndex);
-      visualizerRef.current.loadPreset(presets[presetKeys[newIndex]], blendTime);
+      previousPresetsRef.current.push(presetIndex);
+      const presetName = presetKeys[newIndex];
+      visualizerRef.current.loadPreset(presets[presetName], blendTime);
+      toast(`Visualizer Preset: ${presetName}`, { duration: 2000 });
     }
-  };
+  }, [presetKeys, presetIndex, shufflePresets, presets]);
 
-  const prevPreset = (blendTime = 5.7) => {
+  const prevPreset = useCallback((blendTime = 5.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
-      const newIndex = (presetIndex - 1 + presetKeys.length) % presetKeys.length;
+      let newIndex;
+      if (previousPresetsRef.current.length > 0) {
+        newIndex = previousPresetsRef.current.pop();
+      } else {
+        newIndex = (presetIndex - 1 + presetKeys.length) % presetKeys.length;
+      }
       setPresetIndex(newIndex);
-      visualizerRef.current.loadPreset(presets[presetKeys[newIndex]], blendTime);
+      const presetName = presetKeys[newIndex];
+      visualizerRef.current.loadPreset(presets[presetName], blendTime);
+      toast(`Visualizer Preset: ${presetName}`, { duration: 2000 });
     }
-  };
-
+  }, [presetKeys, presetIndex, presets]);
+  const startPresetCycle = useCallback(() => {
+    console.info('call start cycle');
+    if(cycleIntervalRef.current) {
+      clearInterval(cycleIntervalRef.current);
+    }
+    cycleIntervalRef.current = setInterval(() => {
+      console.info('cycle preset run');
+      nextPreset(2.7);
+    }, 18000); // Change preset every 18 seconds
+  }, [nextPreset]);
   if (error) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
