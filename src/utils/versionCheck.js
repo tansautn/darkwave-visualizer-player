@@ -17,6 +17,12 @@ export const checkAndClearPlaylist = () => {
 
 export const getStoredPlaylist = () => {
   const storedPlaylist = localStorage.getItem(PLAYLIST_KEY);
+  if(storedPlaylist) {
+    const playlist = JSON.parse(storedPlaylist);
+    if(playlist.length > 0) {
+      return playlist.filter(track => track.type !== 'local');
+    }
+  }
   return storedPlaylist ? JSON.parse(storedPlaylist) : null;
 };
 

@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Tooltip } from "@/components/ui/tooltip";
-import { PlayIcon, PauseIcon, SkipForwardIcon, SkipBackIcon, ListIcon, UploadIcon, CloudIcon, DownloadIcon } from 'lucide-react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Button} from "@/components/ui/button";
+import {Slider} from "@/components/ui/slider";
+import {Tooltip} from "@/components/ui/tooltip";
+import {CloudIcon, DownloadIcon, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, UploadIcon} from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
-import { loadSoundCloudTrack, exportPlaylistToM3U8 } from '../utils/playlistUtils';
-import { checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist } from '../utils/versionCheck';
-
+import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
+import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist} from '../utils/versionCheck';
+import {InteractionProvider, useInteraction} from '../providers/InteractionProvider.jsx';
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
@@ -40,8 +40,10 @@ const MusicPlayer = () => {
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
   const visualizerRef = useRef(null);
-  const cycleIntervalRef = useRef(null);
+  const cycleTimeoutRef = useRef(null);
   const initTimeoutRef = useRef(null);
+  const { isInteracting } = useInteraction();
+  /** check if js bundled's version is newer than local storage's version. if so, reset playlist */
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
     const storedPlaylist = getStoredPlaylist();
@@ -51,12 +53,13 @@ const MusicPlayer = () => {
       setPlaylist(storedPlaylist);
     }
   }, []);
-
+  /** store playlist in local storage */
   useEffect(() => {
     setStoredPlaylist(playlist);
   }, [playlist]);
 
   useEffect(() => {
+    console.info('current track', currentTrack);
     if (currentTrack) {
       setError(null);
       if (audioRef.current) {
@@ -71,31 +74,31 @@ const MusicPlayer = () => {
         }
       }
     }
-  }, [currentTrack, isPlaying]);
+  }, [ isPlaying ]);
 
   useEffect(() => {
     if (!currentTrack && playlist.length > 0) {
       setCurrentTrack(playlist[0]);
     }
-  }, [playlist, currentTrack]);
-
-  useEffect(() => {
-    const handleActivity = () => {
-      setIsActive(true);
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setIsActive(false), 3000);
-    };
-
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
+  }, [ playlist ]);
+//  /** user gesture detection */
+//  useEffect(() => {
+//    const handleActivity = () => {
+//      setIsActive(true);
+//      clearTimeout(timeoutRef.current);
+//      timeoutRef.current = setTimeout(() => setIsActive(false), 3000);
+//    };
+//
+//    window.addEventListener('mousemove', handleActivity);
+//    window.addEventListener('keydown', handleActivity);
+//
+//    return () => {
+//      window.removeEventListener('mousemove', handleActivity);
+//      window.removeEventListener('keydown', handleActivity);
+//      clearTimeout(timeoutRef.current);
+//    };
+//  }, []);
+  /** hot keys */
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Space') {
@@ -136,7 +139,7 @@ const MusicPlayer = () => {
       });
     }
     setIsPlaying(!isPlaying);
-  }, [currentTrack, isPlaying]);
+  }, [ currentTrack, isPlaying, audioRef.current ]);
 
   const handleProgress = () => {
     if (audioRef.current) {
@@ -147,12 +150,12 @@ const MusicPlayer = () => {
     }
   };
 
-  const handleVolumeChange = (newVolume) => {
+  const handleVolumeChange = useCallback((newVolume) => {
     setVolume(newVolume);
     if (audioRef.current) {
       audioRef.current.volume = newVolume;
     }
-  };
+  }, [ audioRef.current ]);
 
   const handleTrackSelect = (track) => {
     setCurrentTrack(track);
@@ -195,14 +198,14 @@ const MusicPlayer = () => {
   };
 
   const handleNextTrack = useCallback(() => {
-    const currentIndex = playlist.findIndex(track => track.id === currentTrack.id);
+    const currentIndex = playlist.findIndex(track => track.id === currentTrack?.id);
     if (currentIndex < playlist.length - 1) {
       setCurrentTrack(playlist[currentIndex + 1]);
     }
   }, [playlist, currentTrack]);
 
   const handlePreviousTrack = useCallback(() => {
-    const currentIndex = playlist.findIndex(track => track.id === currentTrack.id);
+    const currentIndex = playlist.findIndex(track => track.id === currentTrack?.id);
     if (currentIndex > 0) {
       setCurrentTrack(playlist[currentIndex - 1]);
     }
@@ -210,8 +213,8 @@ const MusicPlayer = () => {
 
   return (
     <div className="relative h-screen bg-black bg-opacity-80 text-white">
-      <Visualizer audioRef={audioRef} ref={visualizerRef} cycleIntervalRef={cycleIntervalRef} initTimeoutRef={initTimeoutRef} />
-      <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-5'}`}>
+      <Visualizer audioRef={audioRef} ref={visualizerRef} cycleTimeoutRef={cycleTimeoutRef} initTimeoutRef={initTimeoutRef} />
+      <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isInteracting ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
           <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">
             <Sidebar
@@ -237,8 +240,7 @@ const MusicPlayer = () => {
             step={1}
             onValueChange={(value) => {
               if (audioRef.current) {
-                const newTime = (value[0] / 100) * audioRef.current.duration;
-                audioRef.current.currentTime = newTime;
+                audioRef.current.currentTime = (value[ 0 ] / 100) * audioRef.current.duration;
               }
             }}
           />

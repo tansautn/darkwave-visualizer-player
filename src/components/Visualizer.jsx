@@ -2,8 +2,11 @@ import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperat
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
 import {toast} from 'sonner';
+import {useInteraction} from '../providers/InteractionProvider.jsx';
 
-const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, ref) => {
+const PRESET_CHANGE_DELAY = 18000; // 18 seconds
+
+const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, ref) => {
   const canvasRef = useRef(null);
   const visualizerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -15,73 +18,27 @@ const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, re
   const [presetIndex, setPresetIndex] = useState(0);
   const [shufflePresets, setShufflePresets] = useState(true);
   const previousPresetsRef = useRef([]);
+  const { isInteracted } = useInteraction();
+
+  const nextPresetRef = useRef(null);
+
   useImperativeHandle(ref, () => ({
-    nextPreset: () => nextPreset(),
-    prevPreset: () => prevPreset(),
+    nextPreset : () => {
+      nextPreset();
+      resetPresetCycle();
+    },
+    prevPreset : () => {
+      prevPreset();
+      resetPresetCycle();
+    },
     toggleShufflePresets: () => setShufflePresets(prev => !prev),
   }));
 
-  useEffect(() => {
-    const initVisualizer = () => {
-//      if (!isActive) {
-//        initTimeoutRef.current = setTimeout(initVisualizer, 100);
-//        return;
-//      }
-//      clearTimeout(initTimeoutRef.current);
-
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        setError('Canvas element not found');
-        return;
-      }
-
-      try {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-        
-        const allPresets = butterchurnPresets.getPresets();
-        setPresets(allPresets);
-        const sortedPresetKeys = Object.keys(allPresets).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-        setPresetKeys(sortedPresetKeys);
-        setPresetIndex(Math.floor(Math.random() * sortedPresetKeys.length));
-
-        visualizerRef.current = butterchurn.createVisualizer(audioContextRef.current, canvas, {
-          width: canvas.width,
-          height: canvas.height,
-          pixelRatio: window.devicePixelRatio || 1,
-          textureRatio: 1,
-        });
-
-        nextPreset(0);
-        startRenderer();
-        startPresetCycle();
-      } catch (err) {
-        console.error('Error initializing visualizer:', err);
-        setError('Failed to initialize visualizer. Please check your browser compatibility.');
-      }
-    };
-
-    initVisualizer();
-
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.disconnect();
-      }
-      if (delayedAudibleRef.current) {
-        delayedAudibleRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (audioRef.current && visualizerRef.current) {
-      connectToAudioAnalyzer();
+  const connectToAudioAnalyzer = useCallback(() => {
+    if(!audioContextRef.current || !audioRef.current || !visualizerRef.current) {
+      return;
     }
-  }, [audioRef]);
 
-  const connectToAudioAnalyzer = () => {
     if (delayedAudibleRef.current) {
       delayedAudibleRef.current.disconnect();
     }
@@ -94,9 +51,9 @@ const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, re
     delayedAudibleRef.current.connect(audioContextRef.current.destination);
 
     visualizerRef.current.connectAudio(delayedAudibleRef.current);
-  };
+  }, [ audioRef ]);
 
-  const startRenderer = () => {
+  const startRenderer = useCallback(() => {
     const renderFrame = () => {
       if (visualizerRef.current) {
         visualizerRef.current.render();
@@ -104,7 +61,7 @@ const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, re
       requestAnimationFrame(renderFrame);
     };
     renderFrame();
-  };
+  }, []);
 
 //  const nextPreset = (blendTime = 5.7) => {
 //    if (visualizerRef.current && presetKeys.length > 0) {
@@ -135,7 +92,7 @@ const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, re
       previousPresetsRef.current.push(presetIndex);
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
-      toast(`Visualizer Preset: ${presetName}`, { duration: 2000 });
+      toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [presetKeys, presetIndex, shufflePresets, presets]);
 
@@ -150,19 +107,85 @@ const Visualizer = forwardRef(({ audioRef,cycleIntervalRef,initTimeoutRef  }, re
       setPresetIndex(newIndex);
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
-      toast(`Visualizer Preset: ${presetName}`, { duration: 2000 });
+      toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [presetKeys, presetIndex, presets]);
-  const startPresetCycle = useCallback(() => {
-    console.info('call start cycle');
-    if(cycleIntervalRef.current) {
-      clearInterval(cycleIntervalRef.current);
+
+  /* auto next preset */
+  useEffect(() => {
+    nextPresetRef.current = nextPreset;
+  }, [ nextPreset ]);
+
+  const resetPresetCycle = useCallback(() => {
+    if(cycleTimeoutRef.current) {
+      clearTimeout(cycleTimeoutRef.current);
     }
-    cycleIntervalRef.current = setInterval(() => {
-      console.info('cycle preset run');
-      nextPreset(2.7);
-    }, 18000); // Change preset every 18 seconds
-  }, [nextPreset]);
+    cycleTimeoutRef.current = setTimeout(() => {
+      nextPresetRef.current(2.7);
+      resetPresetCycle(); // Set up the next cycle
+    }, PRESET_CHANGE_DELAY);
+  }, []);
+
+  /* init visualizer */
+  useEffect(() => {
+    const initVisualizer = () => {
+      if(!isInteracted) {
+        initTimeoutRef.current = setTimeout(initVisualizer, 100);
+        return;
+      }
+      clearTimeout(initTimeoutRef.current);
+
+      const canvas = canvasRef.current;
+      if(!canvas) {
+        setError('Canvas element not found');
+        return;
+      }
+
+      try {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+
+        const allPresets = butterchurnPresets.getPresets();
+        setPresets(allPresets);
+        const sortedPresetKeys = Object.keys(allPresets).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        setPresetKeys(sortedPresetKeys);
+        setPresetIndex(Math.floor(Math.random() * sortedPresetKeys.length));
+
+        visualizerRef.current = butterchurn.createVisualizer(audioContextRef.current, canvas, {
+          width        : canvas.width,
+          height       : canvas.height,
+          pixelRatio   : window.devicePixelRatio || 1,
+          textureRatio : 1,
+        });
+
+        nextPreset(0);
+        startRenderer();
+        resetPresetCycle();
+        connectToAudioAnalyzer();
+      }
+      catch(err) {
+        console.error('Error initializing visualizer:', err);
+        setError('Failed to initialize visualizer. Please check your browser compatibility.');
+      }
+    };
+
+    initVisualizer();
+
+    return () => {
+      if(audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      if(sourceNodeRef.current) {
+        sourceNodeRef.current.disconnect();
+      }
+      if(delayedAudibleRef.current) {
+        delayedAudibleRef.current.disconnect();
+      }
+      if(cycleTimeoutRef.current) {
+        clearTimeout(cycleTimeoutRef.current);
+      }
+    };
+  }, [ isInteracted, startRenderer, resetPresetCycle, connectToAudioAnalyzer ]);
+
   if (error) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
