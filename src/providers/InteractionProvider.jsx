@@ -50,7 +50,7 @@ export const InteractionProvider = ({ children }) => {
         clearTimeout(timeoutId);
       }
     };
-  }, []);
+  }, [ handleInteraction, timeoutId ]);
 
   return (
   <InteractionContext.Provider value={{ isInteracted, isInteracting }}>
