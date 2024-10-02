@@ -44,14 +44,14 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
     }
 
     delayedAudibleRef.current = audioContextRef.current.createDelay();
-    delayedAudibleRef.current.delayTime.value = 0.26;
+    delayedAudibleRef.current.delayTime.value = 0.1;
 
     sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioRef.current);
     sourceNodeRef.current.connect(delayedAudibleRef.current);
     delayedAudibleRef.current.connect(audioContextRef.current.destination);
 
     visualizerRef.current.connectAudio(delayedAudibleRef.current);
-  }, [ audioRef ]);
+  }, [ audioRef, audioContextRef, visualizerRef ]);
 
   const startRenderer = useCallback(() => {
     const renderFrame = () => {
@@ -88,13 +88,15 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
         console.info('next preset');
         newIndex = (presetIndex + 1) % presetKeys.length;
       }
+      console.info('using index ', newIndex);
+      console.info('using preset ', presetKeys[ newIndex ]);
       setPresetIndex(newIndex);
       previousPresetsRef.current.push(presetIndex);
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
-  }, [presetKeys, presetIndex, shufflePresets, presets]);
+  }, [ presetKeys, presetIndex, presets ]);
 
   const prevPreset = useCallback((blendTime = 5.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
@@ -120,10 +122,11 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
     if(cycleTimeoutRef.current) {
       clearTimeout(cycleTimeoutRef.current);
     }
-    cycleTimeoutRef.current = setTimeout(() => {
+    const handler = () => {
       nextPresetRef.current(2.7);
       resetPresetCycle(); // Set up the next cycle
-    }, PRESET_CHANGE_DELAY);
+    }
+    cycleTimeoutRef.current = setTimeout(handler, PRESET_CHANGE_DELAY);
   }, []);
 
   /* init visualizer */

@@ -9,30 +9,30 @@
 
  * @CREATED    : 11:40 PM , 01/Oct/2024
  */
-import React, {createContext, useContext, useState, useEffect} from 'react';
+import React, {createContext, useContext, useState, useEffect, useRef} from 'react';
 
-const InteractionContext = createContext();
+const InteractionContext = createContext({ isInteracted : false, isInteracting : false });
 
 export const useInteraction = () => useContext(InteractionContext);
 
 export const InteractionProvider = ({ children }) => {
   const [ isInteracted, setIsInteracted ] = useState(false);
   const [ isInteracting, setIsInteracting ] = useState(false);
-  const [ timeoutId, setTimeoutId ] = useState(null);
+  const timeoutIds = useRef([]);
 
   const handleInteraction = () => {
     setIsInteracted(true);
     setIsInteracting(true);
 
-    if(timeoutId) {
-      clearTimeout(timeoutId);
+    while(timeoutIds.current.length) {
+      clearTimeout(timeoutIds.current.pop());
     }
 
     const newTimeoutId = setTimeout(() => {
       setIsInteracting(false);
     }, 3000);
 
-    setTimeoutId(newTimeoutId);
+    timeoutIds.current.push(newTimeoutId);
   };
 
   useEffect(() => {
@@ -46,11 +46,11 @@ export const InteractionProvider = ({ children }) => {
       interactionEvents.forEach(event => {
         window.removeEventListener(event, handleInteraction);
       });
-      if(timeoutId) {
-        clearTimeout(timeoutId);
+      while(timeoutIds.current.length) {
+        clearTimeout(timeoutIds.current.pop());
       }
     };
-  }, [ handleInteraction, timeoutId ]);
+  }, [ handleInteraction, timeoutIds ]);
 
   return (
   <InteractionContext.Provider value={{ isInteracted, isInteracting }}>
