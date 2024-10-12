@@ -9,19 +9,19 @@
 
  * @CREATED    : 11:40 PM , 01/Oct/2024
  */
-import React, {createContext, useContext, useState, useEffect, useRef} from 'react';
+import React, {createContext, useContext, useEffect, useRef, useState} from 'react';
 
 const InteractionContext = createContext({ isInteracted : false, isInteracting : false });
 
 export const useInteraction = () => useContext(InteractionContext);
 
 export const InteractionProvider = ({ children }) => {
-  const [ isInteracted, setIsInteracted ] = useState(false);
-  const [ isInteracting, setIsInteracting ] = useState(false);
+  const [isInteracted, setIsInteracted] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
   const timeoutIds = useRef([]);
+  const interactionTriggered = useRef(false); // Đảm bảo chỉ trigger một lần
 
   const handleInteraction = () => {
-    setIsInteracted(true);
     setIsInteracting(true);
 
     while(timeoutIds.current.length) {
@@ -35,22 +35,40 @@ export const InteractionProvider = ({ children }) => {
     timeoutIds.current.push(newTimeoutId);
   };
 
-  useEffect(() => {
-    const interactionEvents = [ 'mousedown', 'keydown', 'touchstart', 'scroll', 'mousemove' ];
+  const handleFirstUserGesture = () => {
+    if(!interactionTriggered.current) {
+      setIsInteracted(true);
+      interactionTriggered.current = true;
+    }
+  };
 
-    interactionEvents.forEach(event => {
+  useEffect(() => {
+    const interactionEvents = ['click', 'mousedown', 'keydown', 'touchstart']; // Chỉ những sự kiện này kích hoạt isInteracted
+
+    interactionEvents.forEach((event) => {
+      window.addEventListener(event, handleFirstUserGesture);
+    });
+
+    const interactionEventsForInteracting = [...interactionEvents, 'mousemove', 'scroll'];
+    interactionEventsForInteracting.forEach((event) => {
       window.addEventListener(event, handleInteraction);
     });
 
     return () => {
-      interactionEvents.forEach(event => {
+      // Loại bỏ sự kiện
+      interactionEvents.forEach((event) => {
+        window.removeEventListener(event, handleFirstUserGesture);
+      });
+
+      interactionEventsForInteracting.forEach((event) => {
         window.removeEventListener(event, handleInteraction);
       });
+
       while(timeoutIds.current.length) {
         clearTimeout(timeoutIds.current.pop());
       }
     };
-  }, [ handleInteraction, timeoutIds ]);
+  }, []);
 
   return (
   <InteractionContext.Provider value={{ isInteracted, isInteracting }}>
@@ -58,3 +76,4 @@ export const InteractionProvider = ({ children }) => {
     </InteractionContext.Provider>
   );
 };
+

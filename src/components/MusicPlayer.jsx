@@ -7,7 +7,8 @@ import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
 import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist} from '../utils/versionCheck';
-import {InteractionProvider, useInteraction} from '../providers/InteractionProvider.jsx';
+import {useInteraction} from '../providers/InteractionProvider.jsx';
+
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
@@ -15,6 +16,10 @@ const formatTime = (time) => {
 };
 
 const defaultPlaylist = [
+  {id : '8', title : 'Mixtape Nhạc Cổ Lùn 2088 - Zuko on the mix', url : 'https://cdn.zuko.pro/nhac%20co%20lun_test_mixdown.mp3', type : 'remote'},
+  {id    : '9', title : 'Mixtape Một Mai Muộn Màng - Zuko mix 2020', url : 'https://cdn.zuko.pro/Mot-Mai-Muon-Mang_ Zuko_mixdown_total_rms_0.5.mp3',
+    type : 'remote'
+  },
   { id: '3', title: 'DJ Blue Sky - Han Mac Tu (Remix)', url: 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3', type: 'remote' },
   { id: '2', title: 'Tôi là tôi 2013 - Koi Fish', url: 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3', type: 'remote' },
   { id: '1', title: 'Dang Cay - T.H', url: 'https://cdn.zuko.pro/Dang Cay - T.H.wav', type: 'remote' },
@@ -42,7 +47,7 @@ const MusicPlayer = () => {
   const visualizerRef = useRef(null);
   const cycleTimeoutRef = useRef(null);
   const initTimeoutRef = useRef(null);
-  const { isInteracting } = useInteraction();
+  const {isInteracting, isInteracted} = useInteraction();
   /** check if js bundled's version is newer than local storage's version. if so, reset playlist */
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
@@ -82,7 +87,18 @@ const MusicPlayer = () => {
     }
   }, [ playlist ]);
 //  /** user gesture detection */
-//  useEffect(() => {
+  useEffect(() => {
+    if(!isInteracted) {
+      return;
+    }
+    console.info('run useEffect', currentTrack, isPlaying);
+    if(!currentTrack && playlist.length > 0) {
+      setCurrentTrack(playlist[0]);
+    }
+//    setIsPlaying(true);
+    if(!isPlaying) {
+      togglePlay();
+    }
 //    const handleActivity = () => {
 //      setIsActive(true);
 //      clearTimeout(timeoutRef.current);
@@ -97,7 +113,7 @@ const MusicPlayer = () => {
 //      window.removeEventListener('keydown', handleActivity);
 //      clearTimeout(timeoutRef.current);
 //    };
-//  }, []);
+  }, [isInteracted]);
   /** hot keys */
   useEffect(() => {
     const handleKeyDown = (e) => {
