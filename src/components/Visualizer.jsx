@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
-import {toast} from 'sonner';
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 
 const PRESET_CHANGE_DELAY = 18000; // 18 seconds
@@ -12,6 +11,7 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
   const audioContextRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const delayedAudibleRef = useRef(null);
+  const [currentPresetName, setCurrentPresetName] = useState(null);
   const [error, setError] = useState(null);
   const [presets, setPresets] = useState({});
   const [presetKeys, setPresetKeys] = useState([]);
@@ -32,6 +32,7 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       resetPresetCycle();
     },
     toggleShufflePresets: () => setShufflePresets(prev => !prev),
+    getCurrentPreset : () => currentPresetName,
   }));
 
   const connectToAudioAnalyzer = useCallback(() => {
@@ -78,7 +79,7 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
 //      visualizerRef.current.loadPreset(presets[presetKeys[newIndex]], blendTime);
 //    }
 //  };
-  const nextPreset = useCallback((blendTime = 5.7) => {
+  const nextPreset = useCallback((blendTime = 2.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
       let newIndex;
       if (shufflePresets) {
@@ -94,11 +95,12 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       previousPresetsRef.current.push(presetIndex);
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
-      toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
+      setCurrentPresetName(presetName);
+      // toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [ presetKeys, presetIndex, presets ]);
 
-  const prevPreset = useCallback((blendTime = 5.7) => {
+  const prevPreset = useCallback((blendTime = 2.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
       let newIndex;
       if (previousPresetsRef.current.length > 0) {
@@ -109,7 +111,8 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       setPresetIndex(newIndex);
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
-      toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
+      setCurrentPresetName(presetName);
+      // toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [presetKeys, presetIndex, presets]);
 

@@ -16,6 +16,7 @@ const formatTime = (time) => {
 };
 
 const defaultPlaylist = [
+  {id : '10', title : 'Happy no birthday - Zuko mix', url : 'https://cdn.zuko.pro/Recording%202024.10.15%2020_51_34.mp3', type : 'remote'},
   {id : '8', title : 'Mixtape Nhạc Cổ Lùn 2088 - Zuko on the mix', url : 'https://cdn.zuko.pro/nhac%20co%20lun_test_mixdown.mp3', type : 'remote'},
   {id    : '9', title : 'Mixtape Một Mai Muộn Màng - Zuko mix 2020', url : 'https://cdn.zuko.pro/Mot-Mai-Muon-Mang_ Zuko_mixdown_total_rms_0.5.mp3',
     type : 'remote'
@@ -40,7 +41,7 @@ const MusicPlayer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isActive, setIsActive] = useState(true);
-
+  const [currentPresetName, setCurrentPresetName] = useState(null);
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -70,13 +71,7 @@ const MusicPlayer = () => {
       if (audioRef.current) {
         audioRef.current.src = currentTrack.url;
         audioRef.current.load();
-        if (isPlaying) {
-          audioRef.current.play().catch(e => {
-            console.error('Error playing audio:', e);
-            setError('Error playing audio: ' + e.message);
-            setIsPlaying(false);
-          });
-        }
+
       }
     }
   }, [ isPlaying ]);
@@ -114,6 +109,9 @@ const MusicPlayer = () => {
 //      clearTimeout(timeoutRef.current);
 //    };
   }, [isInteracted]);
+  useEffect(() => {
+    setCurrentPresetName(visualizerRef.current?.getCurrentPreset()?.name);
+  }, [visualizerRef.current?.getCurrentPreset()]);
   /** hot keys */
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -249,6 +247,11 @@ const MusicPlayer = () => {
             <div className="text-sm">{formatTime(currentTime)}</div>
             <div className="text-sm text-center">{currentTrack?.title}</div>
             <div className="text-sm">{formatTime(duration - currentTime)}</div>
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            
+            <div className="text-sm text-center">{currentTrack?.title}</div>
+            
           </div>
           <Slider
             value={[progress]}
