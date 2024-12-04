@@ -1,4 +1,4 @@
-const CURRENT_VERSION = '1.0.2'; // Update this when you want to trigger a reset
+const CURRENT_VERSION = '1.0.3'; // Update this when you want to trigger a reset
 const VERSION_KEY = 'app_version';
 const PLAYLIST_KEY = 'playlist';
 
