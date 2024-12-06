@@ -1,4 +1,5 @@
-const CURRENT_VERSION = '1.0.3'; // Update this when you want to trigger a reset
+import {CURRENT_VERSION} from '@/playlists/default';
+
 const VERSION_KEY = 'app_version';
 const PLAYLIST_KEY = 'playlist';
 

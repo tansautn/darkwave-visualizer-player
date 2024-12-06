@@ -1,7 +1,7 @@
 import React from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { GripVertical, Music, CloudIcon } from 'lucide-react';
-import { Input } from "@/components/ui/input";
+import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+import {CloudIcon, GripVertical, Music} from 'lucide-react';
+import {Input} from "@/components/ui/input";
 
 const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistName, onPlaylistNameChange }) => {
   const onDragEnd = (result) => {
@@ -15,7 +15,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistNam
         type="text"
         value={playlistName}
         onChange={(e) => onPlaylistNameChange(e.target.value)}
-        className="mb-4 bg-transparent text-white"
+        className="mb-4 mt-[30px] bg-transparent text-white"
         placeholder="Playlist Name"
       />
       <DragDropContext onDragEnd={onDragEnd}>

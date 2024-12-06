@@ -33,7 +33,8 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
     },
     toggleShufflePresets: () => setShufflePresets(prev => !prev),
     getCurrentPreset : () => currentPresetName,
-  }));
+    currentPresetName : currentPresetName,
+  }), [currentPresetName]);
 
   const connectToAudioAnalyzer = useCallback(() => {
     if(!audioContextRef.current || !audioRef.current || !visualizerRef.current) {
@@ -96,9 +97,11 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       setCurrentPresetName(presetName);
+      console.info('setting current preset name to ', presetName);
+      window.setTimeout(console.info('--setting current preset name to ', presetName), 120);
       // toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
-  }, [ presetKeys, presetIndex, presets ]);
+  }, [presetKeys, presetIndex, presets, shufflePresets]);
 
   const prevPreset = useCallback((blendTime = 2.7) => {
     if (visualizerRef.current && presetKeys.length > 0) {
@@ -112,6 +115,8 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       setCurrentPresetName(presetName);
+      console.info('setting current preset name to ', presetName);
+      window.setTimeout(console.info('--setting current preset name to ', presetName), 120);
       // toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [presetKeys, presetIndex, presets]);
@@ -154,8 +159,6 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
         setPresets(allPresets);
         const sortedPresetKeys = Object.keys(allPresets).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
         setPresetKeys(sortedPresetKeys);
-        setPresetIndex(Math.floor(Math.random() * sortedPresetKeys.length));
-
         visualizerRef.current = butterchurn.createVisualizer(audioContextRef.current, canvas, {
           width        : canvas.width,
           height       : canvas.height,
@@ -163,6 +166,13 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
           textureRatio : 1,
         });
 
+        if(shufflePresets) {
+          let newIdx = Math.floor(Math.random() * sortedPresetKeys.length);
+          const presetName = sortedPresetKeys[newIdx];
+          setPresetIndex(newIdx);
+          setCurrentPresetName(presetName);
+          visualizerRef.current.loadPreset(allPresets[presetName], 0);
+        }
         nextPreset(0);
         startRenderer();
         resetPresetCycle();
