@@ -21,7 +21,7 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistNam
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="playlist">
           {(provided) => (
-            <ul {...provided.droppableProps} ref={provided.innerRef} className="h-[calc(100%-3rem)] overflow-y-auto">
+            <ul {...provided.droppableProps} ref={provided.innerRef} className="h-[calc(100%-3.5rem)] overflow-y-auto">
               {playlist.map((track, index) => (
                 <Draggable key={track.id} draggableId={track.id} index={index}>
                   {(provided, snapshot) => (

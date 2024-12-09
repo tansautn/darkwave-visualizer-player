@@ -1,10 +1,14 @@
-import {Previews} from '@react-buddy/ide-toolbox';
+import {ComponentPreview, Previews} from '@react-buddy/ide-toolbox';
 import {PaletteTree} from './palette';
+import MusicPlayer from '@/components/MusicPlayer.jsx';
 
 const ComponentPreviews = () => {
   return (
   <Previews palette={<PaletteTree />}>
-        </Previews>
+        <ComponentPreview path="/MusicPlayer">
+<MusicPlayer />
+</ComponentPreview>
+</Previews>
   );
 };
 
