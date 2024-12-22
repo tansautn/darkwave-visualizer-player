@@ -266,57 +266,64 @@ const MusicPlayer = () => {
           }}
           />
           <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center space-x-2">
-            <Tooltip content="Toggle Playlist" delayDuration={1000}>
-              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
-                <ListIcon className="h-6 w-6" />
-              </Button>
-            </Tooltip>
+            <div className="hidden md:flex items-center space-x-2">
+              <Tooltip content="Toggle Playlist" delayDuration={1000}>
+                <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
+                  <ListIcon className="h-4 w-4 md:h-6 md:w-6" />
+                </Button>
+              </Tooltip>
               <input
-              type="file"
-              id="file-upload"
-              className="hidden"
-              multiple
-              onChange={handleFileUpload}
-              accept="audio/*"
-              ref={fileInputRef}
+                type="file"
+                id="file-upload"
+                className="hidden"
+                multiple
+                onChange={handleFileUpload}
+                accept="audio/*"
+                ref={fileInputRef}
               />
               <Tooltip content="Upload Local File" delayDuration={1000}>
                 <Button onClick={() => fileInputRef.current.click()} variant="ghost">
-                  <UploadIcon className="h-6 w-6" />
+                  <UploadIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
               </Tooltip>
               <Tooltip content="Add SoundCloud Track" delayDuration={1000}>
                 <Button onClick={handleSoundCloudUpload} variant="ghost">
-                  <CloudIcon className="h-6 w-6" />
+                  <CloudIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
               </Tooltip>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex-1 flex items-center justify-center space-x-2 md:space-x-4">
               <Tooltip content="Previous Track" delayDuration={1000}>
-                <Button onClick={handlePreviousTrack} variant="ghost"><SkipBackIcon className="h-6 w-6" /></Button>
+                <Button onClick={handlePreviousTrack} variant="ghost">
+                  <SkipBackIcon className="h-4 w-4 md:h-6 md:w-6" />
+                </Button>
               </Tooltip>
               <Tooltip content={isPlaying ? "Pause" : "Play"} delayDuration={1000}>
-                <Button onClick={togglePlay} variant="ghost" className="h-12 w-12 rounded-full">
-                  {isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
+                <Button onClick={togglePlay} variant="ghost" className="h-8 w-8 md:h-12 md:w-12 rounded-full">
+                  {isPlaying ? 
+                    <PauseIcon className="h-6 w-6 md:h-8 md:w-8" /> : 
+                    <PlayIcon className="h-6 w-6 md:h-8 md:w-8" />
+                  }
                 </Button>
               </Tooltip>
               <Tooltip content="Next Track" delayDuration={1000}>
-                <Button onClick={handleNextTrack} variant="ghost"><SkipForwardIcon className="h-6 w-6" /></Button>
+                <Button onClick={handleNextTrack} variant="ghost">
+                  <SkipForwardIcon className="h-4 w-4 md:h-6 md:w-6" />
+                </Button>
               </Tooltip>
             </div>
             <div className="flex items-center space-x-2">
               <Tooltip content="Export Playlist" delayDuration={1000}>
-                <Button onClick={handleExportPlaylist} variant="ghost">
-                  <DownloadIcon className="h-6 w-6" />
+                <Button onClick={handleExportPlaylist} variant="ghost" className="hidden md:inline-flex">
+                  <DownloadIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
               </Tooltip>
-              <div className="w-24">
+              <div className="w-16 md:w-24">
                 <Slider
-                value={[volume * 100]}
-                max={100}
-                step={1}
-                onValueChange={(value) => handleVolumeChange(value[0] / 100)}
+                  value={[volume * 100]}
+                  max={100}
+                  step={1}
+                  onValueChange={(value) => handleVolumeChange(value[0] / 100)}
                 />
               </div>
             </div>
