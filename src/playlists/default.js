@@ -13,21 +13,26 @@ export function createPlaylistFromArray(playlist) {
   let ids = [];
   return playlist.map(track => {
     id++;
-    /*if(typeof track === 'object'){
-      if(track?.id) ids.push(track.id);
-    }*/
-    if(ids.includes(id)) {
+    while(ids.includes(id)) {
       id++;
     }
     if(typeof track === 'string') {
       return {id : id, title : track.split('/').pop(), url : track, type : track.startsWith('http') ? 'remote' : 'local'};
     }
+    track.id = id;
+    track.type = track.url.startsWith('http') ? 'remote' : 'local';
+    if(!track.hasOwnProperty('title')){
+      track.title = track.url.split('/').pop();
+    }
     return track;
   });
 }
 
-export const CURRENT_VERSION = '1.0.3'; // Update this when you want to trigger a reset
+export const CURRENT_VERSION = '1.0.5'; // Update this when you want to trigger a reset
 const playlist = [
+  {id : '14', title : 'Lướt Sóng Đạp Mây - Ben', url : 'https://cdn.zuko.pro/musics/viet-remixes/Luot Song Dap May - Ben Heineken x Teddy_01.mp3', type : 'remote'},
+  {id : '13', title : 'Recording 2020.05.06 06_15_39.wav - Zuko Mix', url : 'https://cdn.zuko.pro/mix/Recording%202020.05.06%2006_15_39.wav', type : 'remote'},
+  {id : '12', title : 'Neu mot ngay - Zuko Mix', url : 'https://cdn.zuko.pro/neu-mot-ngay-zuko-mix-96k24bits.mp3', type : 'remote'},
   {id : '11', title : '29.11.2024_22h21 - Zuko Mix', url : 'https://cdn.zuko.pro/29.11.2024_22h21-Zuko.Mix.mp3', type : 'remote'},
   {id : '10', title : '02.11.2024 - Zuko mix', url : 'https://cdn.zuko.pro/2024_11_02_megred.mp3', type : 'remote'}, {
     id   : '9', title : 'Mixtape Một Mai Muộn Màng - Zuko mix 2020', url : 'https://cdn.zuko.pro/Mot-Mai-Muon-Mang_ Zuko_mixdown_total_rms_0.5.mp3',
@@ -45,4 +50,4 @@ const playlist = [
   }, {id : '6', title : 'full B\'Small remix', url : 'https://cdn.zuko.pro/full B\'Small remix.mp3', type : 'remote'},
 ];
 
-export default playlist;
+export default createPlaylistFromArray(playlist);

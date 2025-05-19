@@ -9,6 +9,7 @@ import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils'
 import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist} from '../utils/versionCheck';
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 import defaultPlaylist from '@/playlists/default';
+import {toast} from '@/components/ui/use-toast.js';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
@@ -52,9 +53,10 @@ const MusicPlayer = () => {
   useEffect(() => {
     setStoredPlaylist(playlist);
   }, [playlist]);
-
-  useEffect(() => {
-    console.info('current track', currentTrack);
+  const autoPlayStart = () => {
+    if(audioRef.current && audioRef.current.state === "suspended") {
+      return;
+    }
     if(currentTrack) {
       setError(null);
       if(audioRef.current) {
@@ -69,7 +71,8 @@ const MusicPlayer = () => {
         }
       }
     }
-  }, [currentTrack, audioRef]);
+  };
+  useEffect(autoPlayStart, [currentTrack, audioRef]);
 
   useEffect(() => {
     if(!currentTrack && playlist.length > 0) {
@@ -141,6 +144,11 @@ const MusicPlayer = () => {
   }, []);
 
   const togglePlay = useCallback(() => {
+    if (audioRef.current && audioRef.current.state === "suspended") {
+      console.warn('Audio is suspended. Cannot play audio.');
+      toast('Audio is suspended. Could not play audio until you have iteracted with the page.', { duration : 800 });
+      return;
+    }
     if(!currentTrack) {
       setError('No track selected');
       return;
@@ -197,6 +205,8 @@ const MusicPlayer = () => {
   };
 
   const handleSoundCloudUpload = async () => {
+    alert('SoundCloud upload is waiting for API key approval. So, it is not implemented yet.');
+    return;
     const url = prompt("Enter SoundCloud URL:");
     if(url) {
       try {

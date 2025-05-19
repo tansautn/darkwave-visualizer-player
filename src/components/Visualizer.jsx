@@ -97,8 +97,8 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       const presetName = presetKeys[newIndex];
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       setCurrentPresetName(presetName);
-      console.info('setting current preset name to ', presetName);
-      window.setTimeout(console.info('--setting current preset name to ', presetName), 120);
+//      console.info('setting current preset name to ', presetName);
+//      window.setTimeout(console.info('--setting current preset name to ', presetName), 120);
       // toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [presetKeys, presetIndex, presets, shufflePresets]);
@@ -116,7 +116,7 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
       visualizerRef.current.loadPreset(presets[presetName], blendTime);
       setCurrentPresetName(presetName);
       console.info('setting current preset name to ', presetName);
-      window.setTimeout(console.info('--setting current preset name to ', presetName), 120);
+//      window.setTimeout(console.info('--setting current preset name to ', presetName), 120);
       // toast(`Visualizer Preset: ${presetName}`, { duration : 1200 });
     }
   }, [presetKeys, presetIndex, presets]);
@@ -154,7 +154,15 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
 
       try {
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
 
+        if (audioContextRef.current.state === "suspended") {
+          audioContextRef.current.resume().then(() => {
+            console.info("AudioContext resumed");
+          }).catch(err => {
+            console.error("Failed to resume AudioContext", err);
+          });
+        }
         const allPresets = butterchurnPresets.getPresets();
         setPresets(allPresets);
         const sortedPresetKeys = Object.keys(allPresets).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));

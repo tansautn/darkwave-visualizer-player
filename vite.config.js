@@ -11,7 +11,7 @@ export default defineConfig({
   },
   build : {
     sourcemap : true,
-    watch     : {},
+
   },
   plugins: [react()],
   resolve: {
