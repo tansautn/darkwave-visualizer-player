@@ -43,7 +43,7 @@ export const InteractionProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const interactionEvents = ['click', 'mousedown', 'keydown', 'touchstart']; // Chỉ những sự kiện này kích hoạt isInteracted
+    const interactionEvents = ['click', 'mouseup', 'keyup', 'touchend']; // Chỉ những sự kiện này kích hoạt isInteracted
 
     interactionEvents.forEach((event) => {
       window.addEventListener(event, handleFirstUserGesture);
