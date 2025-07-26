@@ -29,8 +29,24 @@ export function createPlaylistFromArray(playlist) {
   });
 }
 
-export const CURRENT_VERSION = '1.0.8'; // Update this when you want to trigger a reset
+export const CURRENT_VERSION = '1.1.0'; // Update this when you want to trigger a reset
 const playlist = [
+  {
+    title: 'Stuck in the U.K (MiniTape) - Zuko Mix',
+    url: 'https://cdn.zuko.pro/mix/Stuck in the UK_mixdown.mp3',
+  },
+  {
+    title: 'Cau xay xong da lau ko co nguoi nao di qua 2019 - Zuko Mix',
+    url: 'https://cdn.zuko.pro/mix/cau xay xong da lau ko co nguoi nao di qua.mp3',
+  },
+  {
+    title: 'Xa 2019 - Zuko Mix',
+    url: 'https://cdn.zuko.pro/mix/xa-2020_zuko-mix.mp3',
+  },
+  {
+    title: 'Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko Mix[Vol #16]',
+    url: 'https://cdn.zuko.pro/mix/Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko [Vol #16].mp3',
+  },
   {
     title : '[24bits] Không Có Em Tôi Như Mất Cả Thế Giới (Mixtape) - Zuko Mix',
     url   : 'https://archive.org/download/khong-co-em-toi-nhu-mat-ca-the-gioi-mixtape-zuko-mix-24bits/Kh%C3%B4ng%20C%C3%B3%20Em%20T%C3%B4i%20Nh%C6%B0%20M%E1%BA%A5t%20C%E1%BA%A3%20Th%E1%BA%BF%20Gi%E1%BB%9Bi%20%28Mixtape%29%20-%20Zuko%20Mix%20%5B24bits%5D.mp3'
