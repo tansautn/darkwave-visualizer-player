@@ -24,7 +24,7 @@ export function createPlaylistFromArray(playlist) {
     if(!track.hasOwnProperty('title')) {
       track.title = track.url.split('/').pop();
     }
-    track.title = track.title.replace('Zuko', '🇿🇺🇰🅾️')
+    track.title = track.title.replace('Zuko', 'Z𝕦𝕜❁')
     return track;
   });
 }

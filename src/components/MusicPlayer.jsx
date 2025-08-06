@@ -10,6 +10,7 @@ import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist} from '../ut
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 import defaultPlaylist from '@/playlists/default';
 import {toast} from '@/components/ui/use-toast.js';
+import {encodeUrl} from '@/utils/urlUtils.js';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
@@ -60,7 +61,7 @@ const MusicPlayer = () => {
     if(currentTrack) {
       setError(null);
       if(audioRef.current) {
-        audioRef.current.src = currentTrack.url;
+        audioRef.current.src = encodeUrl(currentTrack.url);
         audioRef.current.load();
         if(isPlaying) {
           audioRef.current.play().catch(e => {
