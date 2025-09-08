@@ -20,17 +20,22 @@ export function createPlaylistFromArray(playlist) {
       return {id : id, title : track.split('/').pop(), url : track, type : track.startsWith('http') ? 'remote' : 'local'};
     }
     track.id = id;
+    track.url = decodeURI(track.url);
     track.type = track.url.startsWith('http') ? 'remote' : 'local';
     if(!track.hasOwnProperty('title')) {
       track.title = track.url.split('/').pop();
     }
-    track.title = track.title.replace('Zuko', 'Z𝕦𝕜❁')
+    track.title = track.title.replace('Zuko', '🇿🇺🇰🅾')
     return track;
   });
 }
 
-export const CURRENT_VERSION = '1.1.0'; // Update this when you want to trigger a reset
+export const CURRENT_VERSION = '1.2.0'; // Update this when you want to trigger a reset
 const playlist = [
+  {
+    title: 'Bánh Đa Cua (Mixtape) - Zuko Mix',
+    url: 'https://cdn.zuko.pro/mix/banh-da-cua-mixtape-by-zuko.mp3',
+  },
   {
     title: 'Stuck in the U.K (MiniTape) - Zuko Mix',
     url: 'https://cdn.zuko.pro/mix/Stuck in the UK_mixdown.mp3',
