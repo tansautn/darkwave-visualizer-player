@@ -33,6 +33,10 @@ export function createPlaylistFromArray(playlist) {
 export const CURRENT_VERSION = '1.2.0'; // Update this when you want to trigger a reset
 const playlist = [
   {
+    title: 'One Way Ticket (Mixtape) - Zuko Mix',
+    url: 'https://cdn.zuko.pro/mix/one way ticket_mixdown.mp3',
+  },
+  {
     title: 'Bánh Đa Cua (Mixtape) - Zuko Mix',
     url: 'https://cdn.zuko.pro/mix/banh-da-cua-mixtape-by-zuko.mp3',
   },
