@@ -11,6 +11,8 @@ import {useInteraction} from '../providers/InteractionProvider.jsx';
 import defaultPlaylist from '@/playlists/default';
 import {toast} from '@/components/ui/use-toast.js';
 import {encodeUrl} from '@/utils/urlUtils.js';
+import TypingIntro from './TypingIntro';
+import WelcomeScreen from './WelcomeScreen';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
@@ -24,13 +26,14 @@ const MusicPlayer = () => {
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [playlist, setPlaylist] = useState([]);
-  const [showPlaylist, setShowPlaylist] = useState(true);
+  const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('Default Playlist');
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [currentPresetName, setCurrentPresetName] = useState(null);
+  const [showIntro, setShowIntro] = useState(true);
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -242,6 +245,17 @@ const MusicPlayer = () => {
   return (
   <div className="relative h-screen bg-black bg-opacity-80 text-white">
       <Visualizer audioRef={audioRef} visualizerRef={visualizerRef} ref={visInstanceRef} cycleTimeoutRef={cycleTimeoutRef} initTimeoutRef={initTimeoutRef} />
+      
+      {/* Welcome Screen - hiển thị trước khi user interaction */}
+      {!isInteracted && (
+        <WelcomeScreen />
+      )}
+
+      {/* Typing Intro Overlay - hiển thị sau khi user đã interact */}
+      {showIntro && isInteracted && (
+        <TypingIntro onComplete={() => setShowIntro(false)} />
+      )}
+
       <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isInteracting ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
         <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">

@@ -30,7 +30,7 @@ export function createPlaylistFromArray(playlist) {
   });
 }
 
-export const CURRENT_VERSION = '1.2.0'; // Update this when you want to trigger a reset
+export const CURRENT_VERSION = '1.2.2'; // Update this when you want to trigger a reset
 const playlist = [
   {
     title: 'One Way Ticket (Mixtape) - Zuko Mix',
