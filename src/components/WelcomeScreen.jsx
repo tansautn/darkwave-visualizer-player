@@ -4,9 +4,9 @@ const WelcomeScreen = () => {
   const [cycleCount, setCycleCount] = useState(0);
   const [showStrikethrough, setShowStrikethrough] = useState(false);
   const [currentRole, setCurrentRole] = useState('Coder');
-
+  const maxCycleCount = 5;
   useEffect(() => {
-    if (cycleCount >= 3) {
+    if (cycleCount >= maxCycleCount) {
       // Sau 3 lần lặp, giữ ở "DJ"
       return;
     }
@@ -35,7 +35,7 @@ const WelcomeScreen = () => {
             <span 
               className={`transition-all duration-800 ${
                 showStrikethrough 
-                  ? 'opacity-25' 
+                  ? 'opacity-15' 
                   : 'opacity-100'
               }`}
               style={{
@@ -55,17 +55,17 @@ const WelcomeScreen = () => {
         </h1>
         
         <p className="text-white/70 text-xl mb-2 animate-pulse">
-          VAR vào màn hình để bắt đầu...
+          {cycleCount < maxCycleCount ? '— NHẶT LÁ ĐÁ ỐNG BƠ FULL TIME —' : 'VAR vào màn hình để bắt đầu...'}
         </p>
-        <p className="text-white/50 text-sm">
+        {cycleCount >= maxCycleCount && <p className="text-white/50 text-sm">
           Click anywhere to start
-        </p>
+        </p>}
 
         {/* Loading dots */}
         <div className="flex justify-center gap-2 mt-6">
           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '700ms' }}></div>
         </div>
       </div>
     </div>

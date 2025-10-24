@@ -30,8 +30,27 @@ export function createPlaylistFromArray(playlist) {
   });
 }
 
-export const CURRENT_VERSION = '1.2.2'; // Update this when you want to trigger a reset
+export const CURRENT_VERSION = '1.2.5'; // Update this when you want to trigger a reset
 const playlist = [
+"https://cdn.zuko.pro/musics/viet-remixes/Biet Khi Nao Gap Lai - Long Tran.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Ai Rồi Cũng Sẽ Khác 2023 - Bum.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Ai Chung Tình Được Mãi 2023 [128 SC] - Thái Hoàng.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Canh Sat Hinh Su - T-Bynz Remixx.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Em Nen Dung Lai (Full) Ben x Power Kun 2.wav",
+"https://cdn.zuko.pro/musics/viet-remixes/HOA LAC LOI - CALVIN FT ROBI.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/KEYO - TÒNG PHU 2023 - TVD FT NHIERI.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/LK - Lạc Lối - Future X Thái Hoàng_128.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Mật Ngọt 2023 - Eddy.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Một Giấc Phiêu Bồng 2023 - Bee.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Một Mình Cũng Tốt 2023 - Thái Hoàng.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Người Khóc Cùng Anh 2023 - Thái Hoàng.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Ngục Tù Tình Yêu - Tino Remix.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Qua Phu Tuong - NghiaBe x VD Rơi Mic.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Tha Thứ Chinese 2023 (全世界最傷心的人) - Lê Duy x PG.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Xem Như Em Chẳng May 2023 - Thái Hoàng.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Trọn Vẹn Nghĩa Tình 2023 - Trendy Nhân.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Đừng Khiến Trái Tim Em Khóc 2023 - Buogs Remix.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/Đừng Lo Nhé Có Em Đây 2023 - Dương Trần.mp3",
   {
     title: 'One Way Ticket (Mixtape) - Zuko Mix',
     url: 'https://cdn.zuko.pro/mix/one way ticket_mixdown.mp3',
