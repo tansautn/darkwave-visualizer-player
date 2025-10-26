@@ -3,7 +3,7 @@ import App from "./App.jsx";
 import "./index.css";
 import {DevSupport} from '@react-buddy/ide-toolbox';
 import {ComponentPreviews, useInitial} from '@/dev/index.js';
-
+document.head.dataset.initialTitle = document.title
 ReactDOM.createRoot(document.getElementById("root")).render(
 <DevSupport ComponentPreviews={ComponentPreviews}
             useInitialHook={useInitial}

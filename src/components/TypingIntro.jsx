@@ -9,11 +9,11 @@ const TypingIntro = ({onComplete}) => {
   const introSections = [
     {
       title   : "HỀ LỐ !",
-      content : "- Nơi đây có thể tất cả nhưng sẽ không có ChiPu. Càng không có Ngân98"
+      content : "- Nơi đây có thể có tất cả mọi \"bad things\": dở hơi, hỗn loạn, nhiễu tạp, rối rắm, khó hiểu, chói tai...... Nhưng tuyệt nhiên chắc chắn sẽ không có > 'C h i P u'. Càng hiển nhiên không có >> 'N g â n 9 8'. Và tôi . . .... "
     },
     {
-      title   : "... Tôi ... là một \"thứ\" ...",
-      content : "Hoặc 01 kẻ đam mê âm nhạc và công nghệ. Nơi mà giai điệu gặp gỡ code, và cảm xúc được visualize thành những patterns tuyệt đẹp."
+      title   : "Tôi là 01 \"kẻ\" ...",
+      content : "Đam mê âm nhạc và công nghệ. Nơi mà giai điệu gặp gỡ code, và cảm xúc được visualize thành những patterns tuyệt đẹp."
     },
     {
       title   : "Âm nhạc là...",
@@ -25,7 +25,7 @@ const TypingIntro = ({onComplete}) => {
     },
     {
       title   : "Cảm ơn bạn",
-      content : "Đã dành thời gian khám phá không gian âm nhạc của tôi. Hãy để giai điệu dẫn lối và màu sắc kể câu chuyện..."
+      content : "Đã dành thời gian đồng hành cùng tôi, khám phá không gian âm nhạc của tôi. Giờ, hãy để GIAI ĐIỆU DẪN LỐI và MÀU SẮC KỂ CÂU CHUYỆN..."
     }
   ];
 

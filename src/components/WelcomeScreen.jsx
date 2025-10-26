@@ -5,6 +5,8 @@ const WelcomeScreen = () => {
   const [showStrikethrough, setShowStrikethrough] = useState(false);
   const [currentRole, setCurrentRole] = useState('Coder');
   const maxCycleCount = 5;
+  const strikeTimeout = 700; // mil-secs
+  const firstStrike = 2500; // mil-secs
   useEffect(() => {
     if (cycleCount >= maxCycleCount) {
       // Sau 3 lần lặp, giữ ở "DJ"
@@ -20,8 +22,8 @@ const WelcomeScreen = () => {
         setCurrentRole(currentRole === 'Coder' ? 'DJ' : 'Coder');
         setShowStrikethrough(false);
         setCycleCount(cycleCount + 1);
-      }, 1000);
-    }, 2500);
+      }, strikeTimeout);
+    }, firstStrike);
 
     return () => clearTimeout(strikethroughTimer);
   }, [cycleCount, currentRole]);
@@ -33,13 +35,13 @@ const WelcomeScreen = () => {
           Zuko the{' '}
           <span className="inline-block relative">
             <span 
-              className={`transition-all duration-800 ${
+              className={`transition-opacity duration-${strikeTimeout} animate-in spin-in animate-out zoom-out ${
                 showStrikethrough 
                   ? 'opacity-15' 
                   : 'opacity-100'
               }`}
               style={{
-                textDecoration: showStrikethrough ? 'line-through' : 'none',
+                textDecorationLine: showStrikethrough ? 'line-through' : 'none',
                 textDecorationThickness: '4px',
                 textDecorationColor: '#ef4444'
               }}
@@ -47,7 +49,7 @@ const WelcomeScreen = () => {
               {currentRole}
             </span>
             {showStrikethrough && (
-              <span className="absolute left-0 top-0 w-full text-center animate-fadeIn">
+              <span className={`absolute left-0 top-0 w-full text-center animate-out spin-out duration-${strikeTimeout}`}>
                 {currentRole === 'Coder' ? 'DJ' : 'Coder'}
               </span>
             )}

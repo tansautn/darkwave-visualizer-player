@@ -6,6 +6,8 @@ import {useInteraction} from '../providers/InteractionProvider.jsx';
 const PRESET_CHANGE_DELAY = 18000; // 18 seconds
 
 const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, ref) => {
+  const isUseDefaultStartPreset = true;
+  const startPresetName = 'martin - disco mix 4';
   const canvasRef = useRef(null);
   const visualizerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -173,14 +175,18 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
           pixelRatio   : window.devicePixelRatio || 1,
           textureRatio : 1,
         });
-
-        if(shufflePresets) {
-          let newIdx = Math.floor(Math.random() * sortedPresetKeys.length);
-          const presetName = sortedPresetKeys[newIdx];
-          setPresetIndex(newIdx);
-          setCurrentPresetName(presetName);
-          visualizerRef.current.loadPreset(allPresets[presetName], 0);
+        let presetName, newIdx;
+        if (isUseDefaultStartPreset){
+          presetName = startPresetName;
+          newIdx = sortedPresetKeys.indexOf(presetName);
         }
+        if(shufflePresets && !isUseDefaultStartPreset) {
+          newIdx = Math.floor(Math.random() * sortedPresetKeys.length);
+          presetName = sortedPresetKeys[newIdx];
+        }
+        setCurrentPresetName(presetName);
+        setPresetIndex(newIdx);
+        visualizerRef.current.loadPreset(allPresets[presetName], 0);
         nextPreset(0);
         startRenderer();
         resetPresetCycle();

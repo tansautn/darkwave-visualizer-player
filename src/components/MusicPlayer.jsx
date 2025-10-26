@@ -34,6 +34,10 @@ const MusicPlayer = () => {
   const [isActive, setIsActive] = useState(true);
   const [currentPresetName, setCurrentPresetName] = useState(null);
   const [showIntro, setShowIntro] = useState(true);
+  // For scrolling track title
+  const [scrollingTitle, setScrollingTitle] = useState('');
+  const [indicator, setIndicator] = useState('▶');
+
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -77,6 +81,57 @@ const MusicPlayer = () => {
     }
   };
   useEffect(autoPlayStart, [currentTrack, audioRef]);
+  // --- Start of new/modified useEffects for title management ---
+  const CREDIT_STRING = ' | Z U K O — Darkwave Music Player';
+  const MAX_TITLE_LENGTH = 60; // Độ dài tối đa trước khi bắt đầu chạy chữ
+
+  // Part 1: Indicator
+  useEffect(() => {
+    const indicators = ['▶', '▷'];
+    let indicatorIndex = 0;
+    const interval = setInterval(() => {
+      setIndicator(prev => {
+        if (!isPlaying) {
+          return '🟥'; // Nếu không phát, luôn là '🟥'
+        }
+        indicatorIndex = (indicatorIndex + 1) % indicators.length;
+        return indicators[indicatorIndex];
+      });
+    }, 750);
+
+    return () => clearInterval(interval);
+  }, [isPlaying]); // Chạy lại khi trạng thái play thay đổi
+
+
+  // Part 2 & 3: Title và Credit
+  useEffect(() => {
+    if (!currentTrack) {
+      document.title = document.head.dataset.initialTitle || 'Z U K O — Darkwave Music Player';
+      setScrollingTitle(''); // Reset scrolling title khi không có track
+      return;
+    }
+
+    const fullTitle = currentTrack.title;
+
+    if (fullTitle.length <= MAX_TITLE_LENGTH) {
+      // Nếu title ngắn, không cần chạy chữ
+      setScrollingTitle(fullTitle); // Đảm bảo scrollingTitle được cập nhật
+      document.title = `${indicator} ${fullTitle}${CREDIT_STRING}`;
+    } else {
+      let startIndex = 0;
+      const titleScrollInterval = setInterval(() => {
+        const slicedTitle = fullTitle.slice(startIndex, startIndex + MAX_TITLE_LENGTH);
+        setScrollingTitle(slicedTitle); // Cập nhật state scrollingTitle
+        document.title = `${indicator} ${slicedTitle}${CREDIT_STRING}`;
+
+        startIndex = (startIndex + 1) % (fullTitle.length + 1); // +1 để có khoảng trắng ở cuối khi cuộn
+      }, 500); // Tốc độ chạy chữ (ví dụ: 500ms)
+
+      return () => clearInterval(titleScrollInterval);
+    }
+  }, [currentTrack, indicator, isPlaying]); // Thêm indicator và isPlaying vào dependency để cập nhật tức thì
+
+  // --- End of new/modified useEffects for title management ---
 
   useEffect(() => {
     if(!currentTrack && playlist.length > 0) {

@@ -11,18 +11,24 @@
 export function createPlaylistFromArray(playlist) {
   let id = 0;
   let ids = [];
-  return playlist.map(track => {
-    id++;
-    while(ids.includes(id)) {
+  const checkId = (id) => {
+    if(ids.includes(id)) {
       id++;
+      id = checkId(id);
+    } else {
+      ids.push(id);
     }
+    return id;
+  }
+  return playlist.map(track => {
+    let curId = checkId(id)
     if(typeof track === 'string') {
-      return {id : id, title : track.split('/').pop(), url : track, type : track.startsWith('http') ? 'remote' : 'local'};
+      return {id : curId, title : track.split('/').pop(), url : track, type : track.startsWith('http') ? 'remote' : 'local'};
     }
-    track.id = id;
+    track.id = curId;
     track.url = decodeURI(track.url);
     track.type = track.url.startsWith('http') ? 'remote' : 'local';
-    if(!track.hasOwnProperty('title')) {
+    if(!Object.prototype.hasOwnProperty.call(track, 'title')) {
       track.title = track.url.split('/').pop();
     }
     track.title = track.title.replace('Zuko', '🇿🇺🇰🅾')
@@ -30,7 +36,8 @@ export function createPlaylistFromArray(playlist) {
   });
 }
 
-export const CURRENT_VERSION = '1.2.5'; // Update this when you want to trigger a reset
+//noinspection JSUnresolvedReference
+export const CURRENT_VERSION = typeof BUILD_TIMESTAMP !== 'undefined' ? BUILD_TIMESTAMP : import.meta.env.VITE_PLAYLIST_VERSION || '1.2.5'; // Update this when you want to trigger a reset
 const playlist = [
 "https://cdn.zuko.pro/musics/viet-remixes/Biet Khi Nao Gap Lai - Long Tran.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Ai Rồi Cũng Sẽ Khác 2023 - Bum.mp3",
