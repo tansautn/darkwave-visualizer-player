@@ -9,8 +9,7 @@ const TypingIntro = ({onComplete}) => {
   const introSections = [
     {
       title   : "HỀ LỐ !",
-      content : "- Nơi đây có thể có tất cả mọi \"bad things\": dở hơi, hỗn loạn, nhiễu tạp, rối rắm, khó hiểu, chói tai...... Nhưng tuyệt nhiên chắc chắn sẽ không có > 'C h i P u'. Càng hiển nhiên không có >> 'N g â n 9 8'. Và tôi . . .... "
-    },
+      content : "- Nơi đây có thể có tất cả mọi \"bad things\": dở hơi, hỗn loạn, nhiễu tạp, rối rắm, khó hiểu, chói tai...... Nhưng tuyệt nhiên chắc chắn sẽ không có > 'C h i P u'. Càng hiển nhiên không có >> 'N g â n 9 8'. . . .... "    },
     {
       title   : "Tôi là 01 \"kẻ\" ...",
       content : "Đam mê âm nhạc và công nghệ. Nơi mà giai điệu gặp gỡ code, và cảm xúc được visualize thành những patterns tuyệt đẹp."
@@ -25,7 +24,7 @@ const TypingIntro = ({onComplete}) => {
     },
     {
       title   : "Cảm ơn bạn",
-      content : "Đã dành thời gian đồng hành cùng tôi, khám phá không gian âm nhạc của tôi. Giờ, hãy để GIAI ĐIỆU DẪN LỐI và MÀU SẮC KỂ CÂU CHUYỆN..."
+      content : "Đã dành thời gian đồng hành và khám phá không gian âm nhạc của tôi. Giờ, hãy để GIAI ĐIỆU DẪN LỐI và MÀU SẮC KỂ CÂU CHUYỆN..."
     }
   ];
 
@@ -59,7 +58,7 @@ const TypingIntro = ({onComplete}) => {
         setTimeout(() => {
           setCurrentSection(currentSection + 1);
           setCurrentText('');
-        }, 2500);
+        }, 2800);
       }
     }, 50); // Tốc độ typing
 
@@ -72,13 +71,12 @@ const TypingIntro = ({onComplete}) => {
 
   return (
   <div
-  className={`absolute inset-0 flex items-center justify-center z-50 bg-black/20 transition-opacity duration-1000 ${
+  className={`pointer-events-none absolute inset-0 flex items-center justify-center z-50 bg-black/20 transition-opacity duration-1000 ${
   isVisible ? 'opacity-100' : 'opacity-0'
   }`}
-  style={{pointerEvents : currentSection >= introSections.length ? 'none' : 'auto'}}
   >
       <div className="max-w-2xl mx-auto px-8">
-        <div className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl">
+        <div className="pointer-events-auto bg-black/70 backdrop-blur-lg border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl">
           <pre className="text-white text-base md:text-lg lg:text-xl leading-relaxed font-light whitespace-pre-wrap font-sans">
             {currentText}
             <span className="inline-block w-0.5 h-5 md:h-6 bg-white animate-pulse ml-1"></span>

@@ -29,8 +29,18 @@ const WelcomeScreen = () => {
   }, [cycleCount, currentRole]);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm">
-      <div className="text-center">
+    <div className="absolute inset-0 z-50 overflow-hidden">
+      <video
+        className="absolute inset-0 h-full w-full object-cover brightness-[0.45]"
+        src="/flower_loop.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+      />
+      <div className="relative flex h-full items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="text-center">
         <h1 className="text-white text-6xl md:text-8xl font-black mb-6 tracking-tight font-['Roboto_Mono',monospace] uppercase">
           Zuko the{' '}
           <span className="inline-block relative">
@@ -68,6 +78,7 @@ const WelcomeScreen = () => {
           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '700ms' }}></div>
+        </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import {CURRENT_VERSION} from '@/playlists/default';
 
+export const PLAYBACK_STATE_KEY = 'darkwave-playback-state';
 const VERSION_KEY = 'app_version';
 const PLAYLIST_KEY = 'playlist';
 
@@ -9,6 +10,7 @@ export const checkAndClearPlaylist = () => {
   if (savedVersion !== CURRENT_VERSION) {
     console.log('New version detected. Clearing playlist.');
     localStorage.removeItem(PLAYLIST_KEY);
+    localStorage.removeItem(PLAYBACK_STATE_KEY);
     localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
     return true; // Indicates that a reset occurred
   }

@@ -4,41 +4,36 @@ import react from "@vitejs/plugin-react";
 import {resolve} from "path";
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-let commonConfig =
-    {
-      server: {
-        host: "::",
-        port: "8088",
-      },
-      build : {
-        sourcemap : true,
+export default defineConfig(({ command, mode, isPreview }) => {
+  const isProdBuild = command === "build" && !isPreview && mode !== "development";
 
-      },
-      plugins: [react()],
-      resolve: {
-        alias: [
-          {
-            find: "@",
-            replacement: fileURLToPath(new URL("./src", import.meta.url)),
+  return {
+    ...(isProdBuild
+      ? {
+          define: {
+            BUILD_TIMESTAMP: Date.now().toString(),
           },
-          {
-            find: "lib",
-            replacement: resolve(__dirname, "lib"),
-          },
-        ],
-      },
-    };
-
-export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
-
-  if (command === 'build' && !isPreview)
-  {
-    commonConfig = {
-      ...commonConfig,
-      define: {
-        'BUILD_TIMESTAMP': Date.now().toString(),
-      },
-    };
-  }
-  return commonConfig;
+        }
+      : {}),
+    server: {
+      host: "::",
+      port: "8088",
+    },
+    build: {
+      sourcemap: !isProdBuild,
+    },
+    plugins: [react()],
+    resolve: {
+      alias: [
+        {
+          find: "@",
+          replacement: fileURLToPath(new URL("./src", import.meta.url)),
+        },
+        {
+          find: "lib",
+          replacement: resolve(__dirname, "lib"),
+        },
+      ],
+    },
+  };
 });

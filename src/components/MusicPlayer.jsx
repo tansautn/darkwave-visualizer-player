@@ -6,7 +6,7 @@ import {CloudIcon, DownloadIcon, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, Sk
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
-import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist} from '../utils/versionCheck';
+import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist, PLAYBACK_STATE_KEY} from '../utils/versionCheck';
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 import defaultPlaylist from '@/playlists/default';
 import {toast} from '@/components/ui/use-toast.js';
@@ -46,6 +46,9 @@ const MusicPlayer = () => {
   const cycleTimeoutRef = useRef(null);
   const initTimeoutRef = useRef(null);
   const {isInteracting, isInteracted} = useInteraction();
+  const playbackHydratedRef = useRef(false);
+  const restoreTimeRef = useRef(null);
+  const skipNextSaveRef = useRef(false);
   /** check if js bundled's version is newer than local storage's version. if so, reset playlist */
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
@@ -61,6 +64,107 @@ const MusicPlayer = () => {
   useEffect(() => {
     setStoredPlaylist(playlist);
   }, [playlist]);
+  const savePlaybackState = useCallback((positionOverride) => {
+    if(typeof window === 'undefined' || !currentTrack) {
+      return;
+    }
+    const trackIndex = playlist.findIndex(track => track.id === currentTrack.id);
+    if(trackIndex === -1) {
+      return;
+    }
+    const position = typeof positionOverride === 'number'
+      ? positionOverride
+      : (audioRef.current?.currentTime ?? 0);
+
+    try {
+      localStorage.setItem(
+        PLAYBACK_STATE_KEY,
+        JSON.stringify({
+          trackId  : currentTrack.id,
+          index    : trackIndex,
+          position : position
+        })
+      );
+    }
+    catch(error) {
+      console.warn('Failed to persist playback state', error);
+    }
+  }, [currentTrack, playlist, audioRef]);
+
+  useEffect(() => {
+    if(typeof window === 'undefined' || playlist.length === 0) {
+      return;
+    }
+
+    if(playbackHydratedRef.current) {
+      if(!currentTrack && playlist.length > 0) {
+        setCurrentTrack(playlist[0]);
+      }
+      return;
+    }
+
+    let nextTrack = playlist[0];
+    try {
+      const storedState = localStorage.getItem(PLAYBACK_STATE_KEY);
+      if(storedState) {
+        const parsed = JSON.parse(storedState);
+        let nextIndex = -1;
+
+        if(parsed?.trackId) {
+          nextIndex = playlist.findIndex(track => track.id === parsed.trackId);
+        }
+        if(nextIndex === -1 && typeof parsed?.index === 'number') {
+          const {index} = parsed;
+          if(index >= 0 && index < playlist.length) {
+            nextIndex = index;
+          }
+        }
+
+        if(nextIndex >= 0) {
+          nextTrack = playlist[nextIndex];
+          if(typeof parsed?.position === 'number') {
+            restoreTimeRef.current = parsed.position;
+          }
+        }
+      }
+    }
+    catch(error) {
+      console.warn('Failed to parse playback state', error);
+    }
+
+    skipNextSaveRef.current = restoreTimeRef.current != null;
+    setCurrentTrack(nextTrack);
+    playbackHydratedRef.current = true;
+  }, [playlist, currentTrack]);
+
+  useEffect(() => {
+    if(!currentTrack) {
+      return;
+    }
+    if(skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+    savePlaybackState(0);
+  }, [currentTrack, savePlaybackState]);
+
+  useEffect(() => {
+    if(!currentTrack) {
+      return;
+    }
+    const interval = setInterval(() => {
+      savePlaybackState();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [currentTrack, savePlaybackState]);
+
+  useEffect(() => {
+    return () => {
+      savePlaybackState();
+    };
+  }, [savePlaybackState]);
+
   const autoPlayStart = () => {
     if(audioRef.current && audioRef.current.state === "suspended") {
       return;
@@ -133,11 +237,6 @@ const MusicPlayer = () => {
 
   // --- End of new/modified useEffects for title management ---
 
-  useEffect(() => {
-    if(!currentTrack && playlist.length > 0) {
-      setCurrentTrack(playlist[0]);
-    }
-  }, [playlist]);
 //  /** user gesture detection */
   useEffect(() => {
     if(!isInteracted) {
@@ -414,6 +513,14 @@ const MusicPlayer = () => {
       ref={audioRef}
       onTimeUpdate={handleProgress}
       onEnded={handleNextTrack}
+      onLoadedMetadata={(event) => {
+        if(restoreTimeRef.current != null) {
+          event.currentTarget.currentTime = restoreTimeRef.current;
+          savePlaybackState(restoreTimeRef.current);
+          restoreTimeRef.current = null;
+          skipNextSaveRef.current = false;
+        }
+      }}
       onError={(e) => {
         console.error('Audio error:', e);
         setError('Error loading audio: ' + e.target.error.message);
