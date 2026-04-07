@@ -6,13 +6,15 @@ import {CloudIcon, DownloadIcon, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, Sk
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
-import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist, PLAYBACK_STATE_KEY} from '../utils/versionCheck';
+import {checkAndClearPlaylist, getStoredPlaylist, setStoredPlaylist} from '../utils/versionCheck';
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 import defaultPlaylist from '@/playlists/default';
 import {toast} from '@/components/ui/use-toast.js';
 import {encodeUrl} from '@/utils/urlUtils.js';
 import TypingIntro from './TypingIntro';
 import WelcomeScreen from './WelcomeScreen';
+
+const PLAYBACK_STATE_KEY = 'darkwave-playback-state';
 
 const formatTime = (time) => {
   const minutes = Math.floor(time / 60);

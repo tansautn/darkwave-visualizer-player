@@ -21,6 +21,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
     },
     build: {
       sourcemap: !isProdBuild,
+      emptyOutDir: true,
     },
     plugins: [react()],
     resolve: {

@@ -40,13 +40,26 @@ export function createPlaylistFromArray(playlist) {
 export const CURRENT_VERSION = typeof BUILD_TIMESTAMP !== 'undefined' ? BUILD_TIMESTAMP : import.meta.env.VITE_PLAYLIST_VERSION || '1.2.5'; // Update this when you want to trigger a reset
 const playlist = [
 "https://cdn.zuko.pro/musics/viet-remixes/Biet Khi Nao Gap Lai - Long Tran.mp3",
+"https://cdn.zuko.pro/musics/viet-remixes/LK - Lạc Lối - Future X Thái Hoàng_128.mp3",
+{
+  title: 'Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko Mix[Vol #16]',
+  url: 'https://cdn.zuko.pro/mix/Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko [Vol #16].mp3',
+},
+{
+  title: 'Bánh Đa Cua (Mixtape) - Zuko Mix',
+  url: 'https://cdn.zuko.pro/mix/banh-da-cua-mixtape-by-zuko.mp3',
+},
+{
+  title: 'Xa 2019 - Zuko Mix',
+  url: 'https://cdn.zuko.pro/mix/xa-2020_zuko-mix.mp3',
+},
+"https://cdn.zuko.pro/musics/viet-remixes/HOA LAC LOI - CALVIN FT ROBI.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Ai Rồi Cũng Sẽ Khác 2023 - Bum.mp3",
+{title: "Lonely Worlf Vol #6 - From Disco to Electro (Mixtape) - Zuko Mix", url: "https://cdn.zuko.pro/mix/Nonstop Lonely Wolf Vol 6 - DJ Blue Sky Mix [VDZ.VN].mp3"},
+"https://cdn.zuko.pro/musics/viet-remixes/KEYO - TÒNG PHU 2023 - TVD FT NHIERI.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Ai Chung Tình Được Mãi 2023 [128 SC] - Thái Hoàng.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Canh Sat Hinh Su - T-Bynz Remixx.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Em Nen Dung Lai (Full) Ben x Power Kun 2.wav",
-"https://cdn.zuko.pro/musics/viet-remixes/HOA LAC LOI - CALVIN FT ROBI.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/KEYO - TÒNG PHU 2023 - TVD FT NHIERI.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/LK - Lạc Lối - Future X Thái Hoàng_128.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Mật Ngọt 2023 - Eddy.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Một Giấc Phiêu Bồng 2023 - Bee.mp3",
 "https://cdn.zuko.pro/musics/viet-remixes/Một Mình Cũng Tốt 2023 - Thái Hoàng.mp3",
@@ -63,10 +76,6 @@ const playlist = [
     url: 'https://cdn.zuko.pro/mix/one way ticket_mixdown.mp3',
   },
   {
-    title: 'Bánh Đa Cua (Mixtape) - Zuko Mix',
-    url: 'https://cdn.zuko.pro/mix/banh-da-cua-mixtape-by-zuko.mp3',
-  },
-  {
     title: 'Stuck in the U.K (MiniTape) - Zuko Mix',
     url: 'https://cdn.zuko.pro/mix/Stuck in the UK_mixdown.mp3',
   },
@@ -74,14 +83,7 @@ const playlist = [
     title: 'Cau xay xong da lau ko co nguoi nao di qua 2019 - Zuko Mix',
     url: 'https://cdn.zuko.pro/mix/cau xay xong da lau ko co nguoi nao di qua.mp3',
   },
-  {
-    title: 'Xa 2019 - Zuko Mix',
-    url: 'https://cdn.zuko.pro/mix/xa-2020_zuko-mix.mp3',
-  },
-  {
-    title: 'Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko Mix[Vol #16]',
-    url: 'https://cdn.zuko.pro/mix/Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko [Vol #16].mp3',
-  },
+
   {
     title : '[24bits] Không Có Em Tôi Như Mất Cả Thế Giới (Mixtape) - Zuko Mix',
     url   : 'https://archive.org/download/khong-co-em-toi-nhu-mat-ca-the-gioi-mixtape-zuko-mix-24bits/Kh%C3%B4ng%20C%C3%B3%20Em%20T%C3%B4i%20Nh%C6%B0%20M%E1%BA%A5t%20C%E1%BA%A3%20Th%E1%BA%BF%20Gi%E1%BB%9Bi%20%28Mixtape%29%20-%20Zuko%20Mix%20%5B24bits%5D.mp3'
