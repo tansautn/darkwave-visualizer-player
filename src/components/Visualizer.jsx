@@ -5,7 +5,7 @@ import {useInteraction} from '../providers/InteractionProvider.jsx';
 
 const PRESET_CHANGE_DELAY = 18000; // 18 seconds
 
-const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, ref) => {
+const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef, enabled = true }, ref) => {
   const isUseDefaultStartPreset = true;
   const startPresetName = 'martin - disco mix 4';
   const canvasRef = useRef(null);
@@ -23,6 +23,8 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
   const { isInteracted } = useInteraction();
 
   const nextPresetRef = useRef(null);
+  const rafIdRef = useRef(null);
+  const enabledRef = useRef(enabled);
 
   useImperativeHandle(ref, () => ({
     nextPreset : () => {
@@ -58,13 +60,14 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
   }, [ audioRef, audioContextRef, visualizerRef ]);
 
   const startRenderer = useCallback(() => {
+    if(rafIdRef.current) return;
     const renderFrame = () => {
-      if (visualizerRef.current) {
+      if(visualizerRef.current) {
         visualizerRef.current.render();
       }
-      requestAnimationFrame(renderFrame);
+      rafIdRef.current = requestAnimationFrame(renderFrame);
     };
-    renderFrame();
+    rafIdRef.current = requestAnimationFrame(renderFrame);
   }, []);
 
 //  const nextPreset = (blendTime = 5.7) => {
@@ -127,6 +130,19 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
   useEffect(() => {
     nextPresetRef.current = nextPreset;
   }, [ nextPreset ]);
+
+  /* start / stop renderer when enabled prop changes */
+  useEffect(() => {
+    enabledRef.current = enabled;
+    if(enabled) {
+      startRenderer();
+    } else {
+      if(rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    }
+  }, [enabled, startRenderer]);
 
   const resetPresetCycle = useCallback(() => {
     if(cycleTimeoutRef.current) {
@@ -201,6 +217,10 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
     initVisualizer();
 
     return () => {
+      if(rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       if(audioContextRef.current) {
         audioContextRef.current.close();
       }
@@ -227,7 +247,7 @@ const Visualizer = forwardRef(({ audioRef, cycleTimeoutRef, initTimeoutRef }, re
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full"
+      className={`w-full h-full transition-opacity duration-500 ${enabled ? 'opacity-100' : 'opacity-10'}`}
       width={800}
       height={600}
     />

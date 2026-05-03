@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Button} from "@/components/ui/button";
 import {Slider} from "@/components/ui/slider";
 import {Tooltip} from "@/components/ui/tooltip";
-import {CloudIcon, DownloadIcon, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, UploadIcon} from 'lucide-react';
+import {CloudIcon, DownloadIcon, HelpCircleIcon, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, UploadIcon, Volume, Volume1, Volume2, VolumeX, X} from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
@@ -15,7 +15,7 @@ import TypingIntro from './TypingIntro';
 import WelcomeScreen from './WelcomeScreen';
 import GuidanceWizard from './GuidanceWizard';
 import {AppConfig} from '@/config/AppConfig';
-import {HelpCircleIcon} from 'lucide-react';
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 
 const PLAYBACK_STATE_KEY = 'darkwave-playback-state';
 
@@ -23,6 +23,13 @@ const formatTime = (time) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};
+
+const getVolumeIcon = (vol) => {
+  if(vol === 0) return VolumeX;
+  if(vol <= 0.33) return Volume;
+  if(vol <= 0.66) return Volume1;
+  return Volume2;
 };
 
 const MusicPlayer = () => {
@@ -44,6 +51,7 @@ const MusicPlayer = () => {
   const [indicator, setIndicator] = useState('▶');
 
   const [showWizard, setShowWizard] = useState(false);
+  const [visualizerEnabled, setVisualizerEnabled] = useState(true);
 
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -427,11 +435,25 @@ const MusicPlayer = () => {
     }
   }, [playlist, currentTrack?.id]);
 
+  const VolumeIconComp = getVolumeIcon(volume);
+
   return (
   <>
   <div className="relative h-screen bg-black bg-opacity-80 text-white">
-      <Visualizer audioRef={audioRef} visualizerRef={visualizerRef} ref={visInstanceRef} cycleTimeoutRef={cycleTimeoutRef} initTimeoutRef={initTimeoutRef} />
+      <Visualizer audioRef={audioRef} visualizerRef={visualizerRef} ref={visInstanceRef} cycleTimeoutRef={cycleTimeoutRef} initTimeoutRef={initTimeoutRef} enabled={visualizerEnabled} />
       
+      {/* Mobile only: floating button to toggle visualizer renderer */}
+      {isInteracted && (
+        <button
+          className="md:hidden fixed top-4 right-4 z-40 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all duration-300 active:scale-90"
+          style={{background: visualizerEnabled ? 'rgba(220,38,38,0.85)' : 'rgba(55,65,81,0.85)'}}
+          onClick={() => setVisualizerEnabled(v => !v)}
+          title={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'}
+        >
+          <X className="h-5 w-5 text-white" />
+        </button>
+      )}
+
       {/* Welcome Screen - hiển thị trước khi user interaction */}
       {!isInteracted && (
         <WelcomeScreen />
@@ -482,6 +504,13 @@ const MusicPlayer = () => {
           }}
           />
           <div className="flex items-center justify-between mt-4">
+            {/* Mobile-only: playlist toggle */}
+            <div className="flex md:hidden items-center">
+              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost" className="p-2">
+                <ListIcon className="h-5 w-5" />
+              </Button>
+            </div>
+            {/* Desktop-only: full left controls */}
             <div className="hidden md:flex items-center space-x-2">
               <Tooltip content="Hướng dẫn sử dụng" delayDuration={1000}>
                 <Button onClick={() => setShowWizard(true)} variant="ghost">
@@ -515,21 +544,21 @@ const MusicPlayer = () => {
             </div>
             <div className="flex-1 flex items-center justify-center space-x-2 md:space-x-4">
               <Tooltip content="Previous Track" delayDuration={1000}>
-                <Button onClick={handlePreviousTrack} variant="ghost">
-                  <SkipBackIcon className="h-4 w-4 md:h-6 md:w-6" />
+                <Button onClick={handlePreviousTrack} variant="ghost" className="p-2">
+                  <SkipBackIcon className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
               </Tooltip>
               <Tooltip content={isPlaying ? "Pause" : "Play"} delayDuration={1000}>
-                <Button onClick={togglePlay} variant="ghost" className="h-8 w-8 md:h-12 md:w-12 rounded-full">
-                  {isPlaying ? 
-                    <PauseIcon className="h-6 w-6 md:h-8 md:w-8" /> : 
-                    <PlayIcon className="h-6 w-6 md:h-8 md:w-8" />
+                <Button onClick={togglePlay} variant="ghost" className="h-11 w-11 md:h-12 md:w-12 rounded-full p-0 flex items-center justify-center">
+                  {isPlaying ?
+                    <PauseIcon className="h-6 w-6 md:h-7 md:w-7" /> :
+                    <PlayIcon className="h-6 w-6 md:h-7 md:w-7" />
                   }
                 </Button>
               </Tooltip>
               <Tooltip content="Next Track" delayDuration={1000}>
-                <Button onClick={handleNextTrack} variant="ghost">
-                  <SkipForwardIcon className="h-4 w-4 md:h-6 md:w-6" />
+                <Button onClick={handleNextTrack} variant="ghost" className="p-2">
+                  <SkipForwardIcon className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
               </Tooltip>
             </div>
@@ -539,7 +568,8 @@ const MusicPlayer = () => {
                   <DownloadIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
               </Tooltip>
-              <div className="w-16 md:w-24">
+              {/* Desktop: inline volume slider */}
+              <div className="hidden md:block w-24">
                 <Slider
                   value={[volume * 100]}
                   max={100}
@@ -547,6 +577,25 @@ const MusicPlayer = () => {
                   onValueChange={(value) => handleVolumeChange(value[0] / 100)}
                 />
               </div>
+              {/* Mobile: leveled icon button → popover slider */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" className="md:hidden p-2">
+                    <VolumeIconComp className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="end" className="w-40 p-3 bg-black/90 border border-white/20 text-white">
+                  <div className="flex items-center gap-2">
+                    <VolumeIconComp className="h-4 w-4 shrink-0 text-white/70" />
+                    <Slider
+                      value={[volume * 100]}
+                      max={100}
+                      step={1}
+                      onValueChange={(value) => handleVolumeChange(value[0] / 100)}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
