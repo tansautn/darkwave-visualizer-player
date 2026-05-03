@@ -13,6 +13,9 @@ import {toast} from '@/components/ui/use-toast.js';
 import {encodeUrl} from '@/utils/urlUtils.js';
 import TypingIntro from './TypingIntro';
 import WelcomeScreen from './WelcomeScreen';
+import GuidanceWizard from './GuidanceWizard';
+import {AppConfig} from '@/config/AppConfig';
+import {HelpCircleIcon} from 'lucide-react';
 
 const PLAYBACK_STATE_KEY = 'darkwave-playback-state';
 
@@ -40,6 +43,8 @@ const MusicPlayer = () => {
   const [scrollingTitle, setScrollingTitle] = useState('');
   const [indicator, setIndicator] = useState('▶');
 
+  const [showWizard, setShowWizard] = useState(false);
+
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -51,6 +56,30 @@ const MusicPlayer = () => {
   const playbackHydratedRef = useRef(false);
   const restoreTimeRef = useRef(null);
   const skipNextSaveRef = useRef(false);
+  const showPlaylistRestoredRef = useRef(false);
+  /** hydrate showPlaylist from UI state storage — runs once on mount */
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(AppConfig.UI_STATE_KEY);
+      if(stored) {
+        const parsed = JSON.parse(stored);
+        if(typeof parsed.showPlaylist === 'boolean') {
+          setShowPlaylist(parsed.showPlaylist);
+          showPlaylistRestoredRef.current = true;
+        }
+      }
+    }
+    catch {}
+  }, []);
+
+  /** persist showPlaylist to UI state storage on every change */
+  useEffect(() => {
+    try {
+      localStorage.setItem(AppConfig.UI_STATE_KEY, JSON.stringify({showPlaylist}));
+    }
+    catch {}
+  }, [showPlaylist]);
+
   /** check if js bundled's version is newer than local storage's version. if so, reset playlist */
   useEffect(() => {
     const wasReset = checkAndClearPlaylist();
@@ -399,6 +428,7 @@ const MusicPlayer = () => {
   }, [playlist, currentTrack?.id]);
 
   return (
+  <>
   <div className="relative h-screen bg-black bg-opacity-80 text-white">
       <Visualizer audioRef={audioRef} visualizerRef={visualizerRef} ref={visInstanceRef} cycleTimeoutRef={cycleTimeoutRef} initTimeoutRef={initTimeoutRef} />
       
@@ -409,7 +439,12 @@ const MusicPlayer = () => {
 
       {/* Typing Intro Overlay - hiển thị sau khi user đã interact */}
       {showIntro && isInteracted && (
-        <TypingIntro onComplete={() => setShowIntro(false)} />
+        <TypingIntro onComplete={() => {
+          setShowIntro(false);
+          if(!showPlaylistRestoredRef.current) {
+            setTimeout(() => setShowPlaylist(true), AppConfig.PLAYLIST_AUTO_SHOW_DELAY);
+          }
+        }} />
       )}
 
       <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isInteracting ? 'opacity-60' : 'opacity-5'}`}>
@@ -448,6 +483,11 @@ const MusicPlayer = () => {
           />
           <div className="flex items-center justify-between mt-4">
             <div className="hidden md:flex items-center space-x-2">
+              <Tooltip content="Hướng dẫn sử dụng" delayDuration={1000}>
+                <Button onClick={() => setShowWizard(true)} variant="ghost">
+                  <HelpCircleIcon className="h-4 w-4 md:h-6 md:w-6" />
+                </Button>
+              </Tooltip>
               <Tooltip content="Toggle Playlist" delayDuration={1000}>
                 <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
                   <ListIcon className="h-4 w-4 md:h-6 md:w-6" />
@@ -530,6 +570,9 @@ const MusicPlayer = () => {
       crossOrigin="anonymous"
       />
     </div>
+
+    {showWizard && <GuidanceWizard onClose={() => setShowWizard(false)} />}
+  </>
   );
 };
 
