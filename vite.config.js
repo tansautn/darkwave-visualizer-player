@@ -22,6 +22,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
     build: {
       sourcemap: !isProdBuild,
       emptyOutDir: true,
+      target: ['safari14', 'chrome87', 'firefox78'],
     },
     plugins: [react()],
     resolve: {

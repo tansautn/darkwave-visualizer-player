@@ -8,6 +8,82 @@
     <meta content="Zuko" name="author" />
     <meta content="/og-image.png" property="og:image" />
     <link rel="icon" type="image/ico" href="/favicon.ico" />
+  <script>
+    (function () {
+      function showError(label, msg, src, line, col, stack) {
+        var box = document.getElementById('__err_overlay');
+        if (!box) {
+          box = document.createElement('div');
+          box.id = '__err_overlay';
+          box.style.cssText = [
+            'position:fixed', 'top:0', 'left:0', 'right:0', 'bottom:0',
+            'background:rgba(0,0,0,0.92)', 'color:#ff6b6b',
+            'font-family:monospace', 'font-size:13px',
+            'padding:20px', 'overflow:auto', 'z-index:999999',
+            'box-sizing:border-box', 'white-space:pre-wrap',
+            'word-break:break-all'
+          ].join(';');
+          var heading = document.createElement('div');
+          heading.style.cssText = 'font-size:16px;font-weight:bold;color:#ff4444;margin-bottom:12px';
+          heading.appendChild(document.createTextNode('JS Error — global exception handler'));
+          box.appendChild(heading);
+          var close = document.createElement('button');
+          close.appendChild(document.createTextNode('Dismiss'));
+          close.style.cssText = [
+            'position:absolute', 'top:16px', 'right:16px',
+            'background:#333', 'color:#ccc', 'border:none',
+            'padding:6px 14px', 'cursor:pointer', 'font-size:13px',
+            'border-radius:4px'
+          ].join(';');
+          close.onclick = function () { box.parentNode && box.parentNode.removeChild(box); };
+          box.appendChild(close);
+          box.appendChild(document.createElement('hr'));
+          (document.body || document.documentElement).appendChild(box);
+        }
+
+        var entry = document.createElement('div');
+        entry.style.cssText = 'margin-top:14px;border-left:3px solid #ff4444;padding-left:10px';
+
+        var lines = [
+          '[' + label + ']',
+          'Message : ' + msg,
+          src  ? ('Source  : ' + src + (line != null ? ' :' + line + (col != null ? ':' + col : '') : '')) : '',
+          stack ? ('Stack   :\n' + stack) : ''
+        ];
+        var text = '';
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i]) text += lines[i] + '\n';
+        }
+        entry.appendChild(document.createTextNode(text));
+        box.appendChild(entry);
+      }
+
+      window.onerror = function (msg, src, line, col, err) {
+        showError('onerror', msg, src, line, col, err && err.stack);
+        return false; // let browser also log it
+      };
+
+      window.addEventListener('unhandledrejection', function (ev) {
+        var reason = ev.reason;
+        var msg = reason instanceof Error ? reason.message : String(reason);
+        var stack = reason instanceof Error ? reason.stack : null;
+        showError('unhandledrejection', msg, null, null, null, stack);
+      });
+      window.showError = showError;
+
+      // Blank-page detector: nếu #root vẫn rỗng sau 8s → React crash silently
+      setTimeout(function () {
+        var root = document.getElementById('root');
+        if (root && root.childNodes.length === 0) {
+          showError(
+            'blank-page',
+            '#root is empty after 8s — React likely crashed silently or a module failed to load/parse.',
+            window.location.href, null, null, null
+          );
+        }
+      }, 8000);
+    })();
+  </script>
   </head>
   <body>
     <div id="root"></div>
