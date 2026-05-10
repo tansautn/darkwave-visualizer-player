@@ -3,6 +3,24 @@ import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {CloudIcon, GripVertical, Music} from 'lucide-react';
 import {Input} from "@/components/ui/input";
 
+const ZUKO_TOKENS = ['Zuko', '🇿🇺🇰🅾'];
+
+const renderTitle = (title) => {
+  let parts = [title];
+  for (const token of ZUKO_TOKENS) {
+    parts = parts.flatMap((seg, si) => {
+      if (typeof seg !== 'string') return [seg];
+      const chunks = seg.split(token);
+      return chunks.flatMap((chunk, ci) =>
+        ci < chunks.length - 1
+          ? [chunk, <img key={`${si}-${ci}`} src="/zuko_disco_centered.svg?t=1" alt="Zuko" style={{height: '1.8em', verticalAlign: 'middle', display: 'inline-block', margin: '-12px'}} />]
+          : [chunk]
+      );
+    });
+  }
+  return parts;
+};
+
 const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistName, onPlaylistNameChange }) => {
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -41,9 +59,9 @@ const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistNam
                         className="flex-grow cursor-pointer select-text"
                         onClick={() => onTrackSelect(track)}
                       >
-                        {track.type === 'local' ? <Music size={16} className="inline mr-2" /> : 
+                        {track.type === 'local' ? <Music size={16} className="inline mr-2" /> :
                          track.type === 'soundcloud' ? <CloudIcon size={16} className="inline mr-2" /> : null}
-                        {track.title}
+                        {renderTitle(track.title)}
                       </div>
                     </li>
                   )}

@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Button} from "@/components/ui/button";
 import {Slider} from "@/components/ui/slider";
 import {Tooltip} from "@/components/ui/tooltip";
-import {CloudIcon, DownloadIcon, HelpCircleIcon, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, UploadIcon, Volume, Volume1, Volume2, VolumeX, X} from 'lucide-react';
+import {CloudIcon, DownloadIcon, Eye, EyeOff, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, UploadIcon, Volume, Volume1, Volume2, VolumeX} from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
 import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
@@ -13,7 +13,6 @@ import {toast} from '@/components/ui/use-toast.js';
 import {encodeUrl} from '@/utils/urlUtils.js';
 import TypingIntro from './TypingIntro';
 import WelcomeScreen from './WelcomeScreen';
-import GuidanceWizard from './GuidanceWizard';
 import {AppConfig} from '@/config/AppConfig';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 
@@ -50,7 +49,6 @@ const MusicPlayer = () => {
   const [scrollingTitle, setScrollingTitle] = useState('');
   const [indicator, setIndicator] = useState('▶');
 
-  const [showWizard, setShowWizard] = useState(false);
   const [visualizerEnabled, setVisualizerEnabled] = useState(true);
 
   const audioRef = useRef(null);
@@ -446,11 +444,11 @@ const MusicPlayer = () => {
       {isInteracted && (
         <button
           className="md:hidden fixed top-4 right-4 z-40 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all duration-300 active:scale-90"
-          style={{background: visualizerEnabled ? 'rgba(220,38,38,0.85)' : 'rgba(55,65,81,0.85)'}}
+          style={{background: visualizerEnabled ? 'rgba(220,38,38,0.75)' : 'rgba(55,65,81,0.75)'}}
           onClick={() => setVisualizerEnabled(v => !v)}
           title={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'}
         >
-          <X className="h-5 w-5 text-white" />
+          {visualizerEnabled ? <Eye className="h-5 w-5 text-white" /> : <EyeOff className="h-5 w-5 text-white" />}
         </button>
       )}
 
@@ -469,9 +467,9 @@ const MusicPlayer = () => {
         }} />
       )}
 
-      <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${isInteracting ? 'opacity-60' : 'opacity-5'}`}>
+      <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${!visualizerEnabled ? 'opacity-[0.85]' : isInteracting ? 'opacity-60' : 'opacity-5'}`}>
         {showPlaylist && (
-        <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 h-[85vh] overflow-y-auto">
+        <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 max-h-[80vh] overflow-y-auto">
             <Sidebar
             playlist={playlist}
             currentTrack={currentTrack}
@@ -512,9 +510,9 @@ const MusicPlayer = () => {
             </div>
             {/* Desktop-only: full left controls */}
             <div className="hidden md:flex items-center space-x-2">
-              <Tooltip content="Hướng dẫn sử dụng" delayDuration={1000}>
-                <Button onClick={() => setShowWizard(true)} variant="ghost">
-                  <HelpCircleIcon className="h-4 w-4 md:h-6 md:w-6" />
+              <Tooltip content={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'} delayDuration={1000}>
+                <Button onClick={() => setVisualizerEnabled(v => !v)} variant="ghost">
+                  {visualizerEnabled ? <Eye className="h-4 w-4 md:h-6 md:w-6" /> : <EyeOff className="h-4 w-4 md:h-6 md:w-6" />}
                 </Button>
               </Tooltip>
               <Tooltip content="Toggle Playlist" delayDuration={1000}>
@@ -620,7 +618,6 @@ const MusicPlayer = () => {
       />
     </div>
 
-    {showWizard && <GuidanceWizard onClose={() => setShowWizard(false)} />}
   </>
   );
 };

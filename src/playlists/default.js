@@ -31,7 +31,6 @@ export function createPlaylistFromArray(playlist) {
     if(!Object.prototype.hasOwnProperty.call(track, 'title')) {
       track.title = track.url.split('/').pop();
     }
-    track.title = track.title.replace('Zuko', '🇿🇺🇰🅾')
     return track;
   });
 }
