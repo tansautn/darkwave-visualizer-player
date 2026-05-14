@@ -15,13 +15,14 @@ export function createPlaylistFromArray(playlist) {
     if(ids.includes(id)) {
       id++;
       id = checkId(id);
-    } else {
+    }
+    else {
       ids.push(id);
     }
     return id;
-  }
+  };
   return playlist.map(track => {
-    let curId = checkId(id)
+    let curId = checkId(id);
     if(typeof track === 'string') {
       return {id : curId, title : track.split('/').pop(), url : track, type : track.startsWith('http') ? 'remote' : 'local'};
     }
@@ -35,59 +36,52 @@ export function createPlaylistFromArray(playlist) {
   });
 }
 
+
 //noinspection JSUnresolvedReference
 export const CURRENT_VERSION = typeof BUILD_TIMESTAMP !== 'undefined' ? BUILD_TIMESTAMP : import.meta.env.VITE_PLAYLIST_VERSION || '1.2.5'; // Update this when you want to trigger a reset
 const playlist = [
-"https://cdn.zuko.pro/musics/viet-remixes/Biet Khi Nao Gap Lai - Long Tran.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/LK - Lạc Lối - Future X Thái Hoàng_128.mp3",
-{
-  title: 'Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko Mix[Vol #16]',
-  url: 'https://cdn.zuko.pro/mix/Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko [Vol #16].mp3',
-},
-{
-  title: 'Bánh Đa Cua (Mixtape) - Zuko Mix',
-  url: 'https://cdn.zuko.pro/mix/banh-da-cua-mixtape-by-zuko.mp3',
-},
-{
-  title: 'Xa 2019 - Zuko Mix',
-  url: 'https://cdn.zuko.pro/mix/xa-2020_zuko-mix.mp3',
-},
-"https://cdn.zuko.pro/musics/viet-remixes/HOA LAC LOI - CALVIN FT ROBI.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Ai Rồi Cũng Sẽ Khác 2023 - Bum.mp3",
-{title: "Lonely Worlf Vol #6 - From Disco to Electro (Mixtape) - Zuko Mix", url: "https://cdn.zuko.pro/mix/Nonstop Lonely Wolf Vol 6 - DJ Blue Sky Mix [VDZ.VN].mp3"},
-"https://cdn.zuko.pro/musics/viet-remixes/KEYO - TÒNG PHU 2023 - TVD FT NHIERI.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Ai Chung Tình Được Mãi 2023 [128 SC] - Thái Hoàng.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Canh Sat Hinh Su - T-Bynz Remixx.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Em Nen Dung Lai (Full) Ben x Power Kun 2.wav",
-"https://cdn.zuko.pro/musics/viet-remixes/Mật Ngọt 2023 - Eddy.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Một Giấc Phiêu Bồng 2023 - Bee.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Một Mình Cũng Tốt 2023 - Thái Hoàng.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Người Khóc Cùng Anh 2023 - Thái Hoàng.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Ngục Tù Tình Yêu - Tino Remix.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Qua Phu Tuong - NghiaBe x VD Rơi Mic.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Tha Thứ Chinese 2023 (全世界最傷心的人) - Lê Duy x PG.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Xem Như Em Chẳng May 2023 - Thái Hoàng.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Trọn Vẹn Nghĩa Tình 2023 - Trendy Nhân.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Đừng Khiến Trái Tim Em Khóc 2023 - Buogs Remix.mp3",
-"https://cdn.zuko.pro/musics/viet-remixes/Đừng Lo Nhé Có Em Đây 2023 - Dương Trần.mp3",
   {
-    title: 'One Way Ticket (Mixtape) - Zuko Mix',
-    url: 'https://cdn.zuko.pro/mix/one way ticket_mixdown.mp3',
+    title : 'Xóa Hết "Nỗi Nầm" (2012) - Zuko Remix', url : 'https://cdn.zuko.pro/musics/z/Xóa Hết Nỗi Nầm (Remix) - DJ Blue Sky 2012.mp3',
   },
-  {
-    title: 'Stuck in the U.K (MiniTape) - Zuko Mix',
-    url: 'https://cdn.zuko.pro/mix/Stuck in the UK_mixdown.mp3',
-  },
-  {
-    title: 'Cau xay xong da lau ko co nguoi nao di qua 2019 - Zuko Mix',
-    url: 'https://cdn.zuko.pro/mix/cau xay xong da lau ko co nguoi nao di qua.mp3',
-  },
-
-  {
+  "https://cdn.zuko.pro/musics/viet-remixes/Biet Khi Nao Gap Lai - Long Tran.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/LK - Lạc Lối - Future X Thái Hoàng_128.mp3", {
+    title : 'MagicZ - X A - Zuko Remix', url : 'https://cdn.zuko.pro/musics/z/Magic Z - Xa - DJ Blue Sky Rmx.mp3',
+  }, {
+    title : 'To Where You Belong To (Mixtape) - Zuko Mix', url : 'https://cdn.zuko.pro/mix/to where you belong to mixdown.mp3',
+  }, {
     title : '[24bits] Không Có Em Tôi Như Mất Cả Thế Giới (Mixtape) - Zuko Mix',
     url   : 'https://archive.org/download/khong-co-em-toi-nhu-mat-ca-the-gioi-mixtape-zuko-mix-24bits/Kh%C3%B4ng%20C%C3%B3%20Em%20T%C3%B4i%20Nh%C6%B0%20M%E1%BA%A5t%20C%E1%BA%A3%20Th%E1%BA%BF%20Gi%E1%BB%9Bi%20%28Mixtape%29%20-%20Zuko%20Mix%20%5B24bits%5D.mp3'
-  },
-  {title : 'Closed A Road Block [TEST] - B Small', url : 'https://cdn.zuko.pro/musics/trance/Closed A Road Block [TEST] - B Small.mp3'},
+  }, {
+    title : 'Bánh Đa Cua (Mixtape) - Zuko Mix', url : 'https://cdn.zuko.pro/mix/banh-da-cua-mixtape-by-zuko.mp3',
+  }, {
+    title : 'Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko Mix[Vol #16]',
+    url   : 'https://cdn.zuko.pro/mix/Nhiều Lúc Anh Cứ Suy Diễn (Mixtape) - Zuko [Vol #16].mp3',
+  }, {
+    title : 'Xa 2019 - Zuko Mix', url : 'https://cdn.zuko.pro/mix/xa-2020_zuko-mix.mp3',
+  }, "https://cdn.zuko.pro/musics/viet-remixes/HOA LAC LOI - CALVIN FT ROBI.mp3", "https://cdn.zuko.pro/musics/viet-remixes/Ai Rồi Cũng Sẽ Khác 2023 - Bum.mp3",
+  {
+    title : "Lonely Worlf Vol #6 - From Disco to Electro (Mixtape) - Zuko Mix",
+    url   : "https://cdn.zuko.pro/mix/Nonstop Lonely Wolf Vol 6 - DJ Blue Sky Mix [VDZ.VN].mp3"
+  }, "https://cdn.zuko.pro/musics/viet-remixes/KEYO - TÒNG PHU 2023 - TVD FT NHIERI.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Ai Chung Tình Được Mãi 2023 [128 SC] - Thái Hoàng.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Canh Sat Hinh Su - T-Bynz Remixx.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Em Nen Dung Lai (Full) Ben x Power Kun 2.wav", "https://cdn.zuko.pro/musics/viet-remixes/Mật Ngọt 2023 - Eddy.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Một Giấc Phiêu Bồng 2023 - Bee.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Một Mình Cũng Tốt 2023 - Thái Hoàng.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Người Khóc Cùng Anh 2023 - Thái Hoàng.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Ngục Tù Tình Yêu - Tino Remix.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Qua Phu Tuong - NghiaBe x VD Rơi Mic.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Tha Thứ Chinese 2023 (全世界最傷心的人) - Lê Duy x PG.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Xem Như Em Chẳng May 2023 - Thái Hoàng.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Trọn Vẹn Nghĩa Tình 2023 - Trendy Nhân.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Đừng Khiến Trái Tim Em Khóc 2023 - Buogs Remix.mp3",
+  "https://cdn.zuko.pro/musics/viet-remixes/Đừng Lo Nhé Có Em Đây 2023 - Dương Trần.mp3", {
+    title : 'One Way Ticket (Mixtape) - Zuko Mix', url : 'https://cdn.zuko.pro/mix/one way ticket_mixdown.mp3',
+  }, {
+    title : 'Stuck in the U.K (MiniTape) - Zuko Mix', url : 'https://cdn.zuko.pro/mix/Stuck in the UK_mixdown.mp3',
+  }, {
+    title : 'Cau xay xong da lau ko co nguoi nao di qua 2019 - Zuko Mix', url : 'https://cdn.zuko.pro/mix/cau xay xong da lau ko co nguoi nao di qua.mp3',
+  }, {title : 'Closed A Road Block [TEST] - B Small', url : 'https://cdn.zuko.pro/musics/trance/Closed A Road Block [TEST] - B Small.mp3'},
   {title : 'Lướt Sóng Đạp Mây - Ben', url : 'https://cdn.zuko.pro/musics/viet-remixes/Luot Song Dap May - Ben Heineken x Teddy_01.mp3'},
   {title : 'Sài Gòn 9 - Linh Ku', url : 'https://cdn.zuko.pro/musics/viet-remixes/Sài Gòn Night - DJ Linh Ku.mp3'},
   {title : 'full B\'Small remix', url : 'https://cdn.zuko.pro/full B\'Small remix.mp3'},
@@ -98,8 +92,16 @@ const playlist = [
   {title : 'Mixtape Một Mai Muộn Màng - Zuko mix 2020', url : 'https://cdn.zuko.pro/Mot-Mai-Muon-Mang_ Zuko_mixdown_total_rms_0.5.mp3'},
   {title : 'Happy no birthday - Zuko mix', url : 'https://cdn.zuko.pro/Recording%202024.10.15%2020_51_34.mp3'},
   {title : 'Mixtape Nhạc Cổ Lùn 2088 - Zuko on the mix', url : 'https://cdn.zuko.pro/nhac%20co%20lun_test_mixdown.mp3'},
-  {title : 'Zuko a.k.a DJ Blue Sky - Han Mac Tu (Remix)', url : 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3'},
-  {title : 'Tôi là tôi 2013 - Koi Fish', url : 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3'},
+  {title : 'Zuko a.k.a DJ Blue Sky - Han Mac Tu (Remix)', url : 'https://cdn.zuko.pro/DJ Blue Sky - Han Mac Tu (Remix) [High quality].mp3'}, {
+    title : 'Ký Ức (Remix 2010) - Zuko Remix', url : 'https://cdn.zuko.pro/musics/z/Ký Ức (Remix 2010) - DJ Blue Sky.mp3'
+  }, {
+    title : 'Người Đến Sau (2010) - Zuko Remix', url : 'https://cdn.zuko.pro/musics/z/Người Đến Sau (Remix 2010) - DJ Blue Sky.mp3'
+  }, {
+    title : 'KatyTrang - Càng Yêu Càng Đau (2012) - Zuko Remix', url : 'https://cdn.zuko.pro/musics/z/Cang Yeu Cang Dau (Remix) ~ DJ Blue Sky Remix.mp3'
+  }, {
+    title : 'Kim Lệ Quyên - Em Muốn Dừng Lại (2012) - Zuko Remix',
+    url   : 'https://cdn.zuko.pro/musics/z/Kim Lệ Quyên - Em Muốn Dừng Lại (Remix) ~ DJ Blue Sky.mp3',
+  }, {title : 'Tôi là tôi 2013 - Koi Fish', url : 'https://cdn.zuko.pro/Tôi là tôi 2013 - Koi Fish.mp3'},
   {title : 'Dang Cay - T.H', url : 'https://cdn.zuko.pro/Dang Cay - T.H.wav'},
   {title : 'Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix', url : 'https://cdn.zuko.pro/Faded Ft Thu Cuoi - DJ Linh Ku Feat DJ Phuc Nelly Remix.mp3'},
   {
