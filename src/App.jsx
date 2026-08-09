@@ -6,6 +6,7 @@ import {navItems} from "./nav-items";
 import {InteractionProvider} from '@/providers/InteractionProvider.jsx';
 import {PlaybackProvider} from '@/providers/PlaybackProvider.jsx';
 import {PlaylistProvider} from '@/providers/PlaylistProvider.jsx';
+import {VisualizerProvider} from '@/providers/VisualizerProvider.jsx';
 
 const queryClient = new QueryClient();
 
@@ -15,16 +16,18 @@ const App = () => {
     <InteractionProvider>
       <PlaybackProvider>
         <PlaylistProvider>
-          <TooltipProvider>
-            <Toaster />
-            <BrowserRouter>
-              <Routes>
-                {navItems.map(({ to, page }) => (
-                <Route key={to} path={to} element={page} />
-                ))}
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+          <VisualizerProvider>
+            <TooltipProvider>
+              <Toaster />
+              <BrowserRouter>
+                <Routes>
+                  {navItems.map(({ to, page }) => (
+                  <Route key={to} path={to} element={page} />
+                  ))}
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </VisualizerProvider>
         </PlaylistProvider>
       </PlaybackProvider>
     </InteractionProvider>

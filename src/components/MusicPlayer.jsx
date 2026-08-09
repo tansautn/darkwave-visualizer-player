@@ -9,6 +9,7 @@ import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils'
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 import {usePlayback} from '../providers/PlaybackProvider.jsx';
 import {usePlaylist} from '../providers/PlaylistProvider.jsx';
+import {useVisualizer} from '../providers/VisualizerProvider.jsx';
 import TypingIntro from './TypingIntro';
 import WelcomeScreen from './WelcomeScreen';
 import {AppConfig} from '@/config/AppConfig';
@@ -28,21 +29,16 @@ const getVolumeIcon = (vol) => {
 };
 
 const MusicPlayer = () => {
-  const {audioRef, currentTrack, isPlaying, currentTime, duration, volume, error, toggle, seek, setVolume} = usePlayback();
+  const {currentTrack, isPlaying, currentTime, duration, volume, error, toggle, seek, setVolume} = usePlayback();
   const {playlist, playlistName, setPlaylistName, select, next, prev, add, reorder} = usePlaylist();
   const {isInteracting, isInteracted} = useInteraction();
+  const {enabled: visualizerEnabled, currentPresetName, controls: visualizerControls} = useVisualizer();
 
   const [showPlaylist, setShowPlaylist] = useState(false);
-  const [currentPresetName, setCurrentPresetName] = useState(null);
   const [showIntro, setShowIntro] = useState(true);
   const [indicator, setIndicator] = useState('▶');
-  const [visualizerEnabled, setVisualizerEnabled] = useState(true);
 
   const fileInputRef = useRef(null);
-  const visualizerRef = useRef(null);
-  const visInstanceRef = useRef(null);
-  const cycleTimeoutRef = useRef(null);
-  const initTimeoutRef = useRef(null);
   const showPlaylistRestoredRef = useRef(false);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -122,10 +118,6 @@ const MusicPlayer = () => {
     }
   }, [isInteracted]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    setCurrentPresetName(visInstanceRef?.current?.currentPresetName);
-  }, [visInstanceRef?.current?.currentPresetName]);
-
   /** hot keys */
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -134,10 +126,10 @@ const MusicPlayer = () => {
         toggle();
       }
       else if(e.code === 'ArrowLeft') {
-        visualizerRef.current?.prevPreset();
+        visualizerControls.prevPreset();
       }
       else if(e.code === 'ArrowRight') {
-        visualizerRef.current?.nextPreset();
+        visualizerControls.nextPreset();
       }
       else if(e.code === 'ArrowUp') {
         next();
@@ -157,7 +149,7 @@ const MusicPlayer = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggle, next, prev]);
+  }, [toggle, next, prev, visualizerControls]);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -195,14 +187,14 @@ const MusicPlayer = () => {
   return (
   <>
   <div className="relative h-screen bg-black bg-opacity-80 text-white">
-      <Visualizer audioRef={audioRef} visualizerRef={visualizerRef} ref={visInstanceRef} cycleTimeoutRef={cycleTimeoutRef} initTimeoutRef={initTimeoutRef} enabled={visualizerEnabled} />
+      <Visualizer />
 
       {/* Mobile only: floating button to toggle visualizer renderer */}
       {isInteracted && (
         <button
           className="md:hidden fixed top-4 right-4 z-40 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all duration-300 active:scale-90"
           style={{background: visualizerEnabled ? 'rgba(220,38,38,0.75)' : 'rgba(55,65,81,0.75)'}}
-          onClick={() => setVisualizerEnabled(v => !v)}
+          onClick={() => visualizerControls.setEnabled(v => !v)}
           title={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'}
         >
           {visualizerEnabled ? <Eye className="h-5 w-5 text-white" /> : <EyeOff className="h-5 w-5 text-white" />}
@@ -268,7 +260,7 @@ const MusicPlayer = () => {
             {/* Desktop-only: full left controls */}
             <div className="hidden md:flex items-center space-x-2">
               <Tooltip content={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'} delayDuration={1000}>
-                <Button onClick={() => setVisualizerEnabled(v => !v)} variant="ghost">
+                <Button onClick={() => visualizerControls.setEnabled(v => !v)} variant="ghost">
                   {visualizerEnabled ? <Eye className="h-4 w-4 md:h-6 md:w-6" /> : <EyeOff className="h-4 w-4 md:h-6 md:w-6" />}
                 </Button>
               </Tooltip>
