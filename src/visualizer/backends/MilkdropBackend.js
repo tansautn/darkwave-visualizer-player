@@ -25,7 +25,7 @@ export class MilkdropBackend {
     this.name = 'milkdrop';
     this.visualizer = null;
     this.presetManager = new MilkdropPresetManager();
-    this._connected = false;
+    this._sourceNode = null;
   }
 
   async init(canvas, audioContext, config) {
@@ -43,16 +43,24 @@ export class MilkdropBackend {
   }
 
   connectAudio(sourceNode) {
-    if(!this.visualizer) return;
+    if(!this.visualizer || !sourceNode) return;
     this.visualizer.connectAudio(sourceNode);
-    this._connected = true;
+    this._sourceNode = sourceNode;
   }
 
   disconnectAudio() {
-    if(this.visualizer && this._connected && typeof this.visualizer.disconnectAudio === 'function') {
-      this.visualizer.disconnectAudio();
+    /* butterchurn.disconnectAudio(node) calls node.disconnect() internally,
+       so it needs the exact source node passed back. Calling it bare
+       (or after connectAudio never ran) crashes inside butterchurn. */
+    if(this.visualizer && this._sourceNode && typeof this.visualizer.disconnectAudio === 'function') {
+      try {
+        this.visualizer.disconnectAudio(this._sourceNode);
+      }
+      catch(e) {
+        console.warn('butterchurn.disconnectAudio threw', e);
+      }
     }
-    this._connected = false;
+    this._sourceNode = null;
   }
 
   render() {

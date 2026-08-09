@@ -14,7 +14,7 @@
  *   preloadTrack(track)   → fetch on the inactive slot; no-op if already queued
  *   setOnEndedHandler(cb) → single-slot ended callback
  */
-import React, {createContext, useCallback, useContext, useEffect, useRef, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {encodeUrl} from '@/utils/urlUtils.js';
 
 const PlaybackContext = createContext(null);
@@ -190,9 +190,14 @@ export const PlaybackProvider = ({children}) => {
     if(audioBRef.current) audioBRef.current.volume = volume;
   }, [volume]);
 
+  /* audioRefs must have stable identity — VisualizerProvider uses it in
+     an effect dep list, and a fresh {a,b} object every render would
+     tear down and re-init butterchurn on every timeupdate tick. */
+  const audioRefs = useMemo(() => ({a : audioARef, b : audioBRef}), []);
+
   const value = {
     audioRef       : activeSlot === 'a' ? audioARef : audioBRef,
-    audioRefs      : {a : audioARef, b : audioBRef},
+    audioRefs,
     activeSlot,
     currentTrack, isPlaying, currentTime, duration, volume, error,
     play, pause, toggle, seek, setVolume, loadTrack, preloadTrack, setOnEndedHandler,
