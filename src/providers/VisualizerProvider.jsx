@@ -51,12 +51,12 @@ const mergeConfig = (userConfig) => ({
 export const VisualizerProvider = ({children, config: userConfig}) => {
   const config = useMemo(() => mergeConfig(userConfig), [userConfig]);
   const {isInteracted} = useInteraction();
-  const {audioRef} = usePlayback();
+  const {audioRefs} = usePlayback();
 
   const canvasRef = useRef(null);
   const backendRef = useRef(null);
   const audioContextRef = useRef(null);
-  const sourceNodeRef = useRef(null);
+  const sourceNodesRef = useRef({a : null, b : null});
   const delayNodeRef = useRef(null);
   const rafIdRef = useRef(null);
   const cycleTimeoutRef = useRef(null);
@@ -137,10 +137,23 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
           }
           delayNodeRef.current = audioContextRef.current.createDelay();
           delayNodeRef.current.delayTime.value = 0.1;
-          if(audioRef.current) {
-            sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioRef.current);
-            sourceNodeRef.current.connect(delayNodeRef.current);
-            delayNodeRef.current.connect(audioContextRef.current.destination);
+          delayNodeRef.current.connect(audioContextRef.current.destination);
+        }
+
+        /* both A/B audio elements must be routed so slot swaps stay audible.
+           createMediaElementSource can only be called once per <audio>
+           element per AudioContext, so we cache the source nodes. */
+        for(const slot of ['a', 'b']) {
+          const el = audioRefs[slot]?.current;
+          if(el && !sourceNodesRef.current[slot]) {
+            try {
+              const node = audioContextRef.current.createMediaElementSource(el);
+              node.connect(delayNodeRef.current);
+              sourceNodesRef.current[slot] = node;
+            }
+            catch(e) {
+              console.warn(`Failed to create MediaElementSource for slot ${slot}`, e);
+            }
           }
         }
 
@@ -191,7 +204,7 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
       setReady(false);
       /* AudioContext + source/delay/destination survive across backend swaps */
     };
-  }, [isInteracted, config, audioRef, startRenderer, resetPresetCycle, stopRenderer]);
+  }, [isInteracted, config, audioRefs, startRenderer, resetPresetCycle, stopRenderer]);
 
   /* pause / resume renderer on enabled or frozen toggle */
   useEffect(() => {
@@ -199,6 +212,22 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
     if(enabled && !frozen) startRenderer();
     else stopRenderer();
   }, [enabled, frozen, ready, startRenderer, stopRenderer]);
+
+  /* mobile: when tab is hidden, stop rendering. The audio graph stays
+     connected so <audio> keeps playing; only the RAF loop pauses. */
+  useEffect(() => {
+    if(typeof document === 'undefined') return;
+    const onVisibilityChange = () => {
+      if(document.hidden) {
+        stopRenderer();
+      }
+      else if(ready && enabled && !frozen) {
+        startRenderer();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [ready, enabled, frozen, startRenderer, stopRenderer]);
 
   const controls = useMemo(() => ({
     nextPreset : () => {

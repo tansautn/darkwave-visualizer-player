@@ -15,11 +15,14 @@ graph TD
   PL[PlaylistProvider]
   VP[VisualizerProvider]
   TT[TooltipProvider]
+  MSB[MediaSessionBinder — headless]
   Router[BrowserRouter → Routes → Index]
   MP[MusicPlayer]
   VZ[Visualizer]
 
-  App --> QC --> IP --> PB --> PL --> VP --> TT --> Router --> MP
+  App --> QC --> IP --> PB --> PL --> VP --> TT
+  TT --> MSB
+  TT --> Router --> MP
   MP --> VZ
 ```
 
@@ -63,6 +66,7 @@ src/
   components/
     MusicPlayer.jsx            # UI only — reads all state via hooks
     Visualizer.jsx             # thin canvas view
+    MediaSessionBinder.jsx     # headless — wires Media Session API
 ```
 
 ## Object catalog (quick reference)
@@ -70,9 +74,10 @@ src/
 | Object | Owns | Exposed via |
 |---|---|---|
 | InteractionProvider | `isInteracted` (one-time first gesture), `isInteracting` (3 s activity window) | `useInteraction()` |
-| PlaybackProvider | `<audio>` element, `isPlaying`, `currentTime`, `duration`, `volume`, `error`, `currentTrack` | `usePlayback()` |
-| PlaylistProvider | `playlist[]`, `playlistName`, `currentIndex`, persisted playback state | `usePlaylist()` |
-| VisualizerProvider | canvas, backend instance, RAF loop, cycle timer, AudioContext + graph | `useVisualizer()` |
+| PlaybackProvider | two `<audio>` elements (A/B slots), `isPlaying`, `currentTime`, `duration`, `volume`, `error`, `currentTrack`, preload state | `usePlayback()` |
+| PlaylistProvider | `playlist[]`, `playlistName`, `currentIndex`, persisted playback state, next-track preload trigger | `usePlaylist()` |
+| VisualizerProvider | canvas, backend instance, RAF loop, cycle timer, AudioContext + dual source graph, visibility handler | `useVisualizer()` |
+| MediaSessionBinder | Media Session API metadata + action handlers (headless) | rendered in `App.jsx` |
 | PlaylistStore | localStorage / (future) IndexedDB persistence | injected into PlaylistProvider |
 | VisualizerBackend | GPU/renderer state + a PresetManager | held by VisualizerProvider |
 | PresetManager | preset list, current index, history, cross-fade | `backend.presetManager` |

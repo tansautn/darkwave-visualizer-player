@@ -9,40 +9,58 @@ reloads through the store.
 
 ### PlaybackProvider — `src/providers/PlaybackProvider.jsx`
 
-Owns the `<audio>` element and every fact about the sound the browser is
-making right now.
+Owns **two `<audio>` elements ("A" and "B", ping-pong slots)** and every
+fact about the sound the browser is making right now. Only one slot is
+active at any moment; the other is used to preload the next track so
+transitions are gapless and survive mobile JS throttling.
 
 **Properties (via `usePlayback()`):**
-- `audioRef` — React ref to the `<audio>` element. Given out for
-  `createMediaElementSource` in VisualizerProvider.
-- `currentTrack` — the track object whose URL is currently in `audio.src`.
-- `isPlaying` — boolean, mirrors `audio.paused` inversion but updated by
-  action rather than event.
-- `currentTime`, `duration` — updated on every `timeupdate`.
-- `volume` — 0.0–1.0, mirrored to `audio.volume`.
+- `audioRef` — the currently **active** `<audio>` element. Existing
+  consumers keep working; new consumers that need both slots should read
+  `audioRefs` instead.
+- `audioRefs` — `{a, b}`, both refs. VisualizerProvider uses this to
+  create a `MediaElementSource` for each slot and route both into the
+  shared audio graph.
+- `activeSlot` — `'a'` \| `'b'`. Flips on a fast-path swap.
+- `currentTrack` — the track object whose URL is currently in
+  `activeAudio.src`.
+- `isPlaying` — boolean, updated by action rather than event.
+- `currentTime`, `duration` — updated on the active slot's `timeupdate`.
+- `volume` — 0.0–1.0, mirrored to **both** audio elements' `.volume`.
 - `error` — last playback error string, or `null`.
 
 **Behaviors:**
-- `play()` — `audio.play()`, handles Promise rejection → `error`.
-- `pause()` — `audio.pause()`.
-- `toggle()` — pause if playing, play otherwise. Sets `error = 'No track selected'`
-  when there is nothing to play.
-- `seek(time)` — sets `audio.currentTime` if `time` is finite.
-- `setVolume(v)` — updates state + `audio.volume`.
-- `loadTrack(track, {autoplay = true, restorePosition = null})` — sets
-  `currentTrack`, `audio.src = encodeUrl(track.url)`, calls `audio.load()`, then
-  `audio.play()` if `autoplay`. Stashes `restorePosition` for the next
-  `loadedmetadata`.
-- `setOnEndedHandler(cb)` — single-slot callback fired when `audio` emits
-  `ended`. PlaylistProvider registers itself here to advance to the next track.
+- `play()` — `activeAudio.play()`, handles Promise rejection → `error`.
+- `pause()` — `activeAudio.pause()`.
+- `toggle()` — pause if playing, play otherwise. Sets
+  `error = 'No track selected'` when there is nothing to play.
+- `seek(time)` — sets `activeAudio.currentTime` if `time` is finite.
+- `setVolume(v)` — updates state + both `audio.volume`s.
+- `loadTrack(track, {autoplay = true, restorePosition = null})`:
+  - **Fast path**: when `preloadedRef.track.id === track.id` and no
+    restorePosition, pause the old active, `setActiveSlot(preloaded.slot)`,
+    and play the new active. No network fetch — the preloaded slot is
+    already primed.
+  - **Cold path**: on the active slot, `src = encodeUrl(...)`, `load()`,
+    `play()` if autoplay. Stashes `restorePosition` for the next
+    `loadedmetadata`. Clears any stale preload.
+- `preloadTrack(track)` — sets `inactiveAudio.src = encodeUrl(track.url)`,
+  calls `load()`, remembers `{track, slot}` for the fast-path check.
+  Idempotent: no-op if the same track is already preloaded. Pass `null`
+  to clear.
+- `setOnEndedHandler(cb)` — single-slot callback fired when the active
+  audio emits `ended`. PlaylistProvider registers itself here.
 
-**Event reactions:**
-| Event | Reaction |
+**Event reactions:** Both audio elements' events fire, but the handlers
+short-circuit unless `event.currentTarget === activeAudio()` — so state
+updates and the `ended` bridge only come from the currently playing slot.
+
+| Event (active slot only) | Reaction |
 |---|---|
-| audio `timeupdate` | update `currentTime` + `duration`. |
-| audio `loadedmetadata` | if `restoreTimeRef` is set, apply it to `audio.currentTime` and clear the ref. |
-| audio `ended` | flip `isPlaying = false`, then invoke the registered `onEnded` handler. |
-| audio `error` | set `error` from `event.target.error.message`. |
+| `timeupdate` | update `currentTime` + `duration`. |
+| `loadedmetadata` | if `restoreTimeRef` is set, apply it to `audio.currentTime` and clear. |
+| `ended` | flip `isPlaying = false`, then invoke the registered `onEnded` handler. |
+| `error` | set `error` from `event.target.error.message`. |
 
 ### PlaylistProvider — `src/providers/PlaylistProvider.jsx`
 
@@ -71,6 +89,7 @@ making right now.
 | every 10 s while `currentTrack` is set | `savePlaybackState()` (uses live `audio.currentTime`). |
 | unmount | `savePlaybackState()` — flush on tab close. |
 | audio `ended` (via PlaybackProvider handler slot) | `next()`. |
+| `currentIndex` or `playlist` change | `playback.preloadTrack(playlist[currentIndex + 1])` (or `null` when at the end). Fires on hydration, on manual `select`, on `next`/`prev`, and on drag-reorder. |
 
 ### PlaylistStore — `src/storage/localPlaylistStore.js`
 
@@ -141,26 +160,49 @@ sequenceDiagram
   PB->>MP: isPlaying = true
 ```
 
-### Track ends → next track
+### Track ends → next track (A/B fast path)
 
 ```mermaid
 sequenceDiagram
-  participant AU as audio
+  participant AA as audio A (active)
+  participant AB as audio B (preloaded)
   participant PB as PlaybackProvider
   participant PL as PlaylistProvider
 
-  AU-->>PB: ended
+  Note over AB: src already primed by preloadTrack()
+  AA-->>PB: ended
   PB->>PB: setIsPlaying(false)
   PB->>PL: onEndedHandler()
-  PL->>PL: next()
-  PL->>PB: loadTrack(nextTrack, {autoplay:true})
-  PB->>AU: src = ...; load(); play()
+  PL->>PL: next() → loadTrack(nextTrack, {autoplay:true})
+  PB->>PB: preloadedRef.track.id matches → fast path
+  PB->>AA: pause() + currentTime = 0
+  PB->>PB: setActiveSlot('b')
+  PB->>AB: play()
+  PB-->>PL: currentTrack updated
+  PL->>PB: preloadTrack(nextNextTrack)  [effect on currentIndex]
+  PB->>AA: src = nextNextTrack.url; load()  [now the inactive slot]
 ```
 
-On mobile with the screen off, this chain currently stalls because the
-autoplay path is not being called inside a Media Session action handler.
-That fix is the next step (bước 1) and lands as a `MediaSessionBinder`
-consuming both providers.
+Before A/B preload the transition took a full fresh-fetch on the same
+audio element; with the two-slot swap the browser plays a decoded buffer
+that was already sitting in memory.
+
+### Mobile lock-screen: why this used to break
+
+When the phone is asleep or the browser tab is backgrounded, JS timers
+throttle heavily and any new `audio.play()` outside a user gesture is
+treated as autoplay and blocked. The chain above used to fail at the
+final `play()` on the new active slot. Two changes fix it:
+
+1. **A/B preload** removes the network round-trip so the play is
+   immediate on the `ended` tick.
+2. **MediaSessionBinder** registers a `nexttrack` action handler. When
+   the OS advances the track (headset, lockscreen, notification), the
+   handler runs in a Media-Session-privileged context; the `play()`
+   that follows is treated as user-initiated.
+
+The audio graph in VisualizerProvider also stops rendering (only) when
+the tab is hidden, so no wasted GPU/CPU while backgrounded.
 
 ### Track selection from sidebar
 
@@ -176,7 +218,39 @@ sequenceDiagram
   PL->>PB: loadTrack(track, {autoplay:true})
   PB->>PB: setCurrentTrack(track)
   PL-->>PL: [effect] savePlaybackState(0)
+  PL-->>PB: [effect] preloadTrack(next)
 ```
+
+### MediaSessionBinder — `src/components/MediaSessionBinder.jsx`
+
+Headless. Composes `usePlayback()` + `usePlaylist()` and mirrors state
+into the browser's Media Session API.
+
+**Owned state:** none — pure side effect.
+
+**Behaviors (one per effect):**
+- On `currentTrack` or `playlistName` change → set
+  `navigator.mediaSession.metadata` (title / artist / album / artwork).
+- On `isPlaying` change → set
+  `navigator.mediaSession.playbackState = 'playing' | 'paused'`.
+- On mount / callback identity change → register action handlers:
+  `play`, `pause`, `previoustrack`, `nexttrack`, `stop`, `seekto`,
+  `seekbackward`, `seekforward`. Unregister on cleanup.
+- On `currentTime` / `duration` change → `setPositionState(...)` so the
+  lockscreen scrubber tracks.
+
+**Event reactions:**
+| OS event | Reaction |
+|---|---|
+| lockscreen ▶ / notification play | `playback.play()` |
+| lockscreen ⏸ | `playback.pause()` |
+| headset ⏭ / notification next | `playlist.next()` |
+| headset ⏮ / notification prev | `playlist.prev()` |
+| lockscreen scrub | `playback.seek(seekTime)` |
+| voice assistant "stop music" | `playback.pause()` |
+
+All calls to `navigator.mediaSession.*` are wrapped in `try/catch` so
+browsers that only implement a subset of actions don't throw.
 
 ## Adding a new storage backend
 

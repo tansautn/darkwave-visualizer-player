@@ -182,6 +182,16 @@ export const PlaylistProvider = ({children, store: injectedStore}) => {
     return () => playback.setOnEndedHandler(null);
   }, [next, playback]);
 
+  /* preload the next track onto the inactive audio slot so track transitions
+     survive mobile JS throttling and don't need a fresh network round-trip */
+  useEffect(() => {
+    if(currentIndex < 0 || currentIndex >= playlist.length - 1) {
+      playback.preloadTrack(null);
+      return;
+    }
+    playback.preloadTrack(playlist[currentIndex + 1]);
+  }, [currentIndex, playlist, playback]);
+
   const value = {
     playlist, playlistName, currentIndex,
     setPlaylist, setPlaylistName,

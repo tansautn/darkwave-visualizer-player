@@ -147,9 +147,13 @@ just saw.
 **Owned resources:**
 - `canvasRef` — the DOM canvas.
 - `backendRef` — current VisualizerBackend instance.
-- `audioContextRef`, `sourceNodeRef`, `delayNodeRef` — shared Web Audio graph;
-  survives backend swaps because `createMediaElementSource` can only be
-  called once per `<audio>` element.
+- `audioContextRef`, `delayNodeRef` — shared Web Audio graph;
+  survives backend swaps.
+- `sourceNodesRef` — `{a, b}`, one `MediaElementSource` **per audio slot**
+  from `usePlayback().audioRefs`. Both are created once (bound to the
+  audio element permanently by the browser) and both connect into
+  `delayNode`. Only the active slot outputs sound; the FFT tap sees
+  whichever is currently playing.
 - `rafIdRef` — current RAF id, or `null` when the loop is stopped.
 - `cycleTimeoutRef` — current cycle timer id.
 - `shuffleRef` — mirror of state, read from inside the cycle tick closure.
@@ -157,9 +161,11 @@ just saw.
 **Event reactions:**
 | Event | Reaction |
 |---|---|
-| `isInteracted` flips true | init AudioContext + graph (if not already), create backend from `config.backend`, `backend.init(...)`, subscribe to preset change events, load `startPreset`, `backend.connectAudio(delayNode)`, start RAF, start cycle timer. |
+| `isInteracted` flips true | init AudioContext + delay (if not already), create a `MediaElementSource` **per audio slot** (A and B) and connect both into delay → destination, create backend from `config.backend`, `backend.init(...)`, subscribe to preset change events, load `startPreset`, `backend.connectAudio(delayNode)`, start RAF, start cycle timer. |
 | `config` reference changes | full teardown of backend (dispose + clear refs), rerun init. AudioContext + source/delay/destination are kept. |
 | `enabled` or `frozen` change (after `ready`) | start RAF if `enabled && !frozen`, stop otherwise. |
+| `document.visibilitychange` → hidden | `stopRenderer()` — audio graph left connected, only the RAF loop is paused. |
+| `document.visibilitychange` → visible | `startRenderer()` if `ready && enabled && !frozen`. |
 | preset manager emits `'change'` | `setCurrentPresetName(preset.name)`. |
 | manual `nextPreset`/`prevPreset`/`randomPreset`/`loadPreset` | delegate to preset manager, then `resetCycle()`. |
 | provider unmounts | cancel RAF, clear cycle timer, `backend.dispose()`. |
@@ -182,9 +188,10 @@ sequenceDiagram
   IP->>VP: isInteracted = true
   VP->>AC: new AudioContext()
   VP->>AC: createDelay(0.1s)
-  VP->>PB: audioRef.current
-  VP->>AC: createMediaElementSource(audio)
-  VP->>AC: source → delay → destination
+  VP->>AC: delay → destination
+  VP->>PB: audioRefs.a / audioRefs.b
+  VP->>AC: createMediaElementSource(audioA) → delay
+  VP->>AC: createMediaElementSource(audioB) → delay
   VP->>BE: createBackend('milkdrop')
   VP->>BE: init(canvas, ctx, config)
   BE->>PM: attach(visualizer)
@@ -248,12 +255,13 @@ sequenceDiagram
 The AudioContext and its `source → delay → destination` chain are preserved
 across the swap, so audio never cuts.
 
-### Freeze vs disable vs backend swap
+### Freeze vs disable vs backend swap vs tab-hidden
 
 | Action | RAF | Backend | Audio graph | Use case |
 |---|---|---|---|---|
 | `controls.freeze()` | stopped | kept | kept | pause visuals but keep music going |
 | `controls.setEnabled(false)` | stopped | kept | kept | user hides the visualizer |
+| `document.hidden = true` | stopped | kept | kept | mobile lockscreen / tab switch — audio keeps playing, GPU idles |
 | backend swap | stopped → started | disposed → new | kept | switch renderer style |
 | provider unmount | stopped | disposed | AudioContext closed with the app | teardown |
 

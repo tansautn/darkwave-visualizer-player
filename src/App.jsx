@@ -7,6 +7,7 @@ import {InteractionProvider} from '@/providers/InteractionProvider.jsx';
 import {PlaybackProvider} from '@/providers/PlaybackProvider.jsx';
 import {PlaylistProvider} from '@/providers/PlaylistProvider.jsx';
 import {VisualizerProvider} from '@/providers/VisualizerProvider.jsx';
+import {MediaSessionBinder} from '@/components/MediaSessionBinder.jsx';
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => {
           <VisualizerProvider>
             <TooltipProvider>
               <Toaster />
+              <MediaSessionBinder />
               <BrowserRouter>
                 <Routes>
                   {navItems.map(({ to, page }) => (
