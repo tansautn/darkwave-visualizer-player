@@ -125,21 +125,21 @@ sequenceDiagram
   participant LS as localStorage
   participant AU as audio element
 
-  App->>PB: mount
-  App->>PL: mount
-  PL->>Store: checkVersion()
-  Store->>LS: get 'app_version'
-  Store-->>PL: wasReset (bool)
-  PL->>Store: load('default')
-  Store->>LS: get 'playlist'
-  Store-->>PL: tracks[]
-  PL->>PL: setPlaylist(tracks or default)
-  PL->>LS: get 'darkwave-playback-state'
-  LS-->>PL: {trackId, index, position}
-  PL->>PB: loadTrack(track, {autoplay:false, restorePosition:position})
-  PB->>AU: src = encodeUrl(track.url); load()
-  AU-->>PB: loadedmetadata
-  PB->>AU: currentTime = position
+  App->>PB: "mount"
+  App->>PL: "mount"
+  PL->>Store: "checkVersion()"
+  Store->>LS: "get 'app_version'"
+  Store-->>PL: "wasReset [bool]"
+  PL->>Store: "load['default']"
+  Store->>LS: "get 'playlist'"
+  Store-->>PL: "tracks[]"
+  PL->>PL: "setPlaylist[tracks or default]"
+  PL->>LS: "get 'darkwave-playback-state'"
+  LS-->>PL: "{trackId, index, position}"
+  PL->>PB: "loadTrack[track, {autoplay:false, restorePosition:position}]"
+  PB->>AU: "src = encodeUrl[track.url]-> load"
+  AU-->>PB: "loadedmetadata"
+  PB->>AU: "currentTime = position"
 ```
 
 ### First user gesture unlocks playback
@@ -169,18 +169,18 @@ sequenceDiagram
   participant PB as PlaybackProvider
   participant PL as PlaylistProvider
 
-  Note over AB: src already primed by preloadTrack()
-  AA-->>PB: ended
-  PB->>PB: setIsPlaying(false)
-  PB->>PL: onEndedHandler()
-  PL->>PL: next() → loadTrack(nextTrack, {autoplay:true})
-  PB->>PB: preloadedRef.track.id matches → fast path
-  PB->>AA: pause() + currentTime = 0
-  PB->>PB: setActiveSlot('b')
-  PB->>AB: play()
-  PB-->>PL: currentTrack updated
-  PL->>PB: preloadTrack(nextNextTrack)  [effect on currentIndex]
-  PB->>AA: src = nextNextTrack.url; load()  [now the inactive slot]
+  Note over AB: "src already primed by preloadTrack()"
+  AA-->>PB: "ended"
+  PB->>PB: "setIsPlaying(false)"
+  PB->>PL: "onEndedHandler()"
+  PL->>PL: "next() → loadTrack(nextTrack, {autoplay:true})"
+  PB->>PB: "preloadedRef.track.id matches → fast path"
+  PB->>AA: "pause() + currentTime = 0"
+  PB->>PB: "setActiveSlot('b')"
+  PB->>AB: "play()"
+  PB-->>PL: "currentTrack updated"
+  PL->>PB: "preloadTrack(nextNextTrack)  [effect on currentIndex]"
+  PB->>AA: "src = nextNextTrack.url-> load()  [now the inactive slot]"
 ```
 
 Before A/B preload the transition took a full fresh-fetch on the same
