@@ -3,30 +3,35 @@ import {TooltipProvider} from "@/components/ui/tooltip";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {BrowserRouter, Routes, Route} from "react-router-dom";
 import {navItems} from "./nav-items";
-import {useEffect} from "react";
-import {checkAndClearPlaylist} from "./utils/versionCheck";
 import {InteractionProvider} from '@/providers/InteractionProvider.jsx';
+import {PlaybackProvider} from '@/providers/PlaybackProvider.jsx';
+import {PlaylistProvider} from '@/providers/PlaylistProvider.jsx';
+import {VisualizerProvider} from '@/providers/VisualizerProvider.jsx';
+import {MediaSessionBinder} from '@/components/MediaSessionBinder.jsx';
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  useEffect(() => {
-    checkAndClearPlaylist();
-  }, []);
-
   return (
   <QueryClientProvider client={queryClient}>
     <InteractionProvider>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
-          <Routes>
-            {navItems.map(({ to, page }) => (
-            <Route key={to} path={to} element={page} />
-            ))}
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <PlaybackProvider>
+        <PlaylistProvider>
+          <VisualizerProvider>
+            <TooltipProvider>
+              <Toaster />
+              <MediaSessionBinder />
+              <BrowserRouter>
+                <Routes>
+                  {navItems.map(({ to, page }) => (
+                  <Route key={to} path={to} element={page} />
+                  ))}
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </VisualizerProvider>
+        </PlaylistProvider>
+      </PlaybackProvider>
     </InteractionProvider>
   </QueryClientProvider>
   );
