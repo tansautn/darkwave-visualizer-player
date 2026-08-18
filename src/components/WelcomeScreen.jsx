@@ -1,32 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import SlashingTitle from './SlashingTitle';
 
 const WelcomeScreen = () => {
-  const [cycleCount, setCycleCount] = useState(0);
-  const [showStrikethrough, setShowStrikethrough] = useState(false);
-  const [currentRole, setCurrentRole] = useState('Coder');
-  const maxCycleCount = 5;
-  const strikeTimeout = 700; // mil-secs
-  const firstStrike = 2500; // mil-secs
+  const [ready, setReady] = useState(false);
+
+  // Sau một khoảng, chuyển tagline sang "click to start".
+  // Hiệu ứng slash trên title tự chạy bằng CSS thuần — không cần JS.
   useEffect(() => {
-    if (cycleCount >= maxCycleCount) {
-      // Sau 3 lần lặp, giữ ở "DJ"
-      return;
-    }
-
-    // Sau 1.5 giây, hiển thị strikethrough
-    const strikethroughTimer = setTimeout(() => {
-      setShowStrikethrough(true);
-      
-      // Sau 0.5 giây nữa, thay đổi từ Coder -> DJ hoặc ngược lại
-      setTimeout(() => {
-        setCurrentRole(currentRole === 'Coder' ? 'DJ' : 'Coder');
-        setShowStrikethrough(false);
-        setCycleCount(cycleCount + 1);
-      }, strikeTimeout);
-    }, firstStrike);
-
-    return () => clearTimeout(strikethroughTimer);
-  }, [cycleCount, currentRole]);
+    const timer = setTimeout(() => setReady(true), 15000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="absolute inset-0 z-50 overflow-hidden">
@@ -41,35 +24,16 @@ const WelcomeScreen = () => {
       />
       <div className="relative flex h-full items-center justify-center bg-black/40 backdrop-blur-sm">
         <div className="text-center">
-        <h1 className="text-white text-6xl md:text-8xl font-black mb-6 tracking-tight font-['Roboto_Mono',monospace] uppercase">
-          Zuko the{' '}
-          <span className="inline-block relative">
-            <span 
-              className={`transition-opacity duration-${strikeTimeout} animate-in spin-in animate-out zoom-out ${
-                showStrikethrough 
-                  ? 'opacity-15' 
-                  : 'opacity-100'
-              }`}
-              style={{
-                textDecorationLine: showStrikethrough ? 'line-through' : 'none',
-                textDecorationThickness: '4px',
-                textDecorationColor: '#ef4444'
-              }}
-            >
-              {currentRole}
-            </span>
-            {showStrikethrough && (
-              <span className={`absolute left-0 top-0 w-full text-center animate-out spin-out duration-${strikeTimeout}`}>
-                {currentRole === 'Coder' ? 'DJ' : 'Coder'}
-              </span>
-            )}
-          </span>
-        </h1>
-        
+        <SlashingTitle
+          prefix="Zuko the"
+          words={['Coder', 'DJ']}
+          className="text-white text-6xl md:text-8xl font-black mb-6 tracking-tight font-['Roboto_Mono',monospace] uppercase"
+        />
+
         <p className="text-white/70 text-xl mb-2 animate-pulse">
-          {cycleCount < maxCycleCount ? '— NHẶT LÁ ĐÁ ỐNG BƠ FULL TIME —' : 'VAR vào màn hình để bắt đầu...'}
+          {!ready ? '— NHẶT LÁ ĐÁ ỐNG BƠ FULL TIME —' : 'VAR vào màn hình để bắt đầu...'}
         </p>
-        {cycleCount >= maxCycleCount && <p className="text-white/50 text-sm">
+        {ready && <p className="text-white/50 text-sm">
           Click anywhere to start
         </p>}
 

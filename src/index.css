@@ -91,3 +91,168 @@
     animation: fadeIn 0.3s ease-out forwards;
   }
 }
+
+/* ==================================================================
+   SLASH TITLE — "ZUKO THE CODER"  <->  "ZUKO THE DJ"
+   Pure CSS Fruit-Ninja slash effect. Inherits font/color/size from
+   the surrounding <h1>. Tune the 6 --slash-* variables below.
+   ================================================================== */
+.slash-title {
+  /* --- tune these 6 --- */
+  --slash-T:     7s;      /* full loop = word A life + word B life   */
+  --slash-cut:   0%;      /* cut steepness: 0% flat … 40% very steep */
+  --slash-gap:   0.5em;   /* how far the halves drift apart          */
+  --slash-blur:  8px;     /* blur of the dying halves                */
+  --slash-slot:  5.6em;   /* width reserved for the longest word     */
+  --slash-blade: #ffffff; /* blade / spark color                     */
+}
+
+/* the slot both words share — block so the word always drops to its own
+   (second) line, centered under the prefix on every screen size */
+.slash-slot {
+  position: relative;
+  display: block;
+  margin: 0 auto;
+  width: var(--slash-slot);
+  height: 1em;
+  line-height: 1;
+}
+
+/* one swappable word: word B replays the same timeline, half a loop later */
+.slash-word {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation-delay: calc(var(--i) * var(--slash-T) / -2);
+}
+
+/* scaleX carrier — owns the "grows horizontally" rebirth */
+.slash-word__body {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  animation: slashBirth var(--slash-T) cubic-bezier(.22, 1, .36, 1) infinite;
+  animation-delay: inherit;
+  will-change: transform;
+}
+
+/* the two halves: identical copies, differing only by clip-path */
+.slash-word__half {
+  display: block;
+  color: inherit;
+  animation: slashSplit var(--slash-T) cubic-bezier(.16, .84, .3, 1) infinite;
+  animation-delay: inherit;
+  will-change: transform, opacity, filter;
+}
+.slash-word__half + .slash-word__half {
+  position: absolute;
+  inset: 0;
+}
+
+/* diagonal cut, lower-left -> upper-right. The polygon runs past the box
+   (-40%/140%) so glow/antialiasing never gets clipped into a rectangle. */
+.slash-word__half--top {
+  clip-path: polygon(-40% -60%, 140% -60%,
+                     140% calc(var(--slash-cut) + .6%),
+                     -40% calc(100% - var(--slash-cut) + .6%));
+  --dir: -1;
+}
+.slash-word__half--bottom {
+  clip-path: polygon(-40% calc(100% - var(--slash-cut)), 140% var(--slash-cut), 140% 160%, -40% 160%);
+  --dir: 1;
+}
+
+/* the blade streak */
+.slash-word__blade {
+  position: absolute;
+  top: 50%;
+  left: -15%;
+  width: 130%;
+  height: 2px;
+  transform-origin: 50% 50%;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--slash-blade) 0%, transparent) 14%,
+      color-mix(in srgb, var(--slash-blade) 70%, transparent) 46%,
+      var(--slash-blade) 52%,
+      color-mix(in srgb, var(--slash-blade) 70%, transparent) 58%,
+      transparent 90%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--slash-blade) 75%, transparent),
+              0 0 34px color-mix(in srgb, var(--slash-blade) 35%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  animation: slashBlade var(--slash-T) cubic-bezier(.3, 0, .2, 1) infinite;
+  animation-delay: inherit;
+}
+
+/* sparks at the impact point */
+.slash-word__sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.slash-word__sparks i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--slash-blade);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--slash-blade) 80%, transparent);
+  opacity: 0;
+  animation: slashSpark var(--slash-T) cubic-bezier(.1, .7, .3, 1) infinite;
+  animation-delay: inherit;
+}
+.slash-word__sparks i:nth-child(1) { --sx:  110px; --sy: -40px; }
+.slash-word__sparks i:nth-child(2) { --sx:  -88px; --sy:  46px; }
+.slash-word__sparks i:nth-child(3) { --sx:   58px; --sy: -72px; }
+.slash-word__sparks i:nth-child(4) { --sx:  -52px; --sy:  78px; }
+.slash-word__sparks i:nth-child(5) { --sx:  150px; --sy:  14px; }
+.slash-word__sparks i:nth-child(6) { --sx: -140px; --sy: -18px; }
+
+@keyframes slashBirth {
+  0%, 57%  { transform: scaleX(1)    scaleY(1); }
+  92%      { transform: scaleX(.05)  scaleY(.9); }
+  98%      { transform: scaleX(1.05) scaleY(1.02); }
+  100%     { transform: scaleX(1)    scaleY(1); }
+}
+
+@keyframes slashSplit {
+  0%, 41%  { transform: none; opacity: 1; filter: blur(0); }
+  43%      { transform: translate(calc(var(--dir) * -2px), calc(var(--dir) * 2px)); opacity: 1; filter: blur(0); }
+  56%      { transform: translate(calc(var(--dir) * var(--slash-gap) * .35),
+                                   calc(var(--dir) * var(--slash-gap)))
+                        rotate(calc(var(--dir) * 4deg));
+             opacity: 0; filter: blur(var(--slash-blur)); }
+  57%, 92% { transform: none; opacity: 0; filter: blur(0); }
+  97%, 100%{ transform: none; opacity: 1; filter: blur(0); }
+}
+
+@keyframes slashBlade {
+  0%, 39.5% { opacity: 0; transform: rotate(-13deg) translateX(-95%) scaleX(.6); }
+  40.8%     { opacity: 1; transform: rotate(-13deg) translateX(-35%) scaleX(1); }
+  43%       { opacity: 1; transform: rotate(-13deg) translateX(45%)  scaleX(1); }
+  45%, 100% { opacity: 0; transform: rotate(-13deg) translateX(95%)  scaleX(.6); }
+}
+
+@keyframes slashSpark {
+  0%, 41%   { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  43%       { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  53%, 100% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slash-word__body,
+  .slash-word__half,
+  .slash-word__blade,
+  .slash-word__sparks i { animation: none; }
+  .slash-word { opacity: 0; }
+  .slash-word:first-of-type { opacity: 1; }
+  .slash-word__half { clip-path: none; }
+  .slash-word__half--bottom { opacity: 0; }
+}
