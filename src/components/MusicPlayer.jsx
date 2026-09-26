@@ -32,7 +32,7 @@ const MusicPlayer = () => {
   const {currentTrack, isPlaying, currentTime, duration, volume, error, toggle, seek, setVolume} = usePlayback();
   const {playlist, playlistName, setPlaylistName, select, next, prev, add, reorder} = usePlaylist();
   const {isInteracting, isInteracted} = useInteraction();
-  const {enabled: visualizerEnabled, currentPresetName, controls: visualizerControls} = useVisualizer();
+  const {enabled: visualizerEnabled, currentPresetName, isCurrentBlacklisted, controls: visualizerControls} = useVisualizer();
 
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
@@ -136,6 +136,12 @@ const MusicPlayer = () => {
       }
       else if(e.code === 'ArrowDown') {
         prev();
+      }
+      else if(e.code === 'KeyD') {
+        visualizerControls.toggleBlacklistPreset();
+      }
+      else if(e.code === 'KeyS') {
+        visualizerControls.toggleShufflePreset();
       }
       else if(e.code === 'Enter') {
         if(e.shiftKey) {

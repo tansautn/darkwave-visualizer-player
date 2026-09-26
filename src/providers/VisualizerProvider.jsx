@@ -67,6 +67,7 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
   const [frozen, setFrozen] = useState(false);
   const [shufflePresets, setShufflePresetsState] = useState(config.shufflePresets);
   const [currentPresetName, setCurrentPresetName] = useState(null);
+  const [isCurrentBlacklisted, setIsCurrentBlacklisted] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => { shuffleRef.current = shufflePresets; }, [shufflePresets]);
@@ -163,6 +164,7 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
 
         backend.presetManager.subscribe('change', (preset) => {
           setCurrentPresetName(preset?.name ?? null);
+          setIsCurrentBlacklisted(preset?.name ? backend.presetManager.isBlacklisted(preset.name) : false);
         });
 
         if(config.useStartPreset && config.startPreset) {
@@ -246,6 +248,19 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
       backendRef.current?.presetManager.loadPreset(idOrName, config.blendTime);
       resetPresetCycle();
     },
+    toggleShufflePreset : () => {
+      setShufflePresetsState(!shuffleRef.current);
+    },
+    toggleBlacklistPreset : () => {
+      const pm = backendRef.current?.presetManager;
+      if(!pm?.currentPreset) return;
+      const wasAdded = pm.toggleBlacklist(pm.currentPreset.name);
+      setIsCurrentBlacklisted(wasAdded);
+      if(wasAdded) {
+        pm.nextPreset(config.blendTime, {shuffle : shuffleRef.current});
+        resetPresetCycle();
+      }
+    },
     freeze       : () => setFrozen(true),
     resume       : () => setFrozen(false),
     toggleFreeze : () => setFrozen(v => !v),
@@ -257,7 +272,7 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
   const value = {
     canvasRef, config,
     ready, error,
-    enabled, frozen, shufflePresets, currentPresetName,
+    enabled, frozen, shufflePresets, currentPresetName, isCurrentBlacklisted,
     listPresets : () => backendRef.current?.presetManager.list() ?? [],
     controls,
   };
