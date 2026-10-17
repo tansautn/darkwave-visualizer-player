@@ -11,10 +11,15 @@
  * Consumers get, via useVisualizer():
  *   canvasRef, config, ready, error,
  *   enabled, frozen, shufflePresets, currentPresetName,
+ *   options  → {autoCycle, cycleInterval, blendTime, targetFps}
  *   listPresets(),
  *   controls: { nextPreset, prevPreset, randomPreset, loadPreset,
  *               freeze, resume, toggleFreeze,
- *               setEnabled, setShufflePresets, resetCycle }
+ *               setEnabled, setShufflePresets, setOptions, resetCycle }
+ *
+ * `options` are seeded from config but tunable at runtime: they live in a
+ * ref read by the RAF loop / cycle timer, so changing them never tears
+ * down the backend (a `config` change still does).
  */
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {MilkdropBackend} from '@/visualizer/backends/MilkdropBackend';
@@ -40,6 +45,11 @@ const createBackend = (name) => {
     default         : throw new Error(`Unknown visualizer backend: ${name}`);
   }
 };
+
+const RUNTIME_OPTION_KEYS = ['autoCycle', 'cycleInterval', 'blendTime', 'targetFps'];
+
+const pickRuntimeOptions = (config) =>
+  Object.fromEntries(RUNTIME_OPTION_KEYS.map(key => [key, config[key]]));
 
 const mergeConfig = (userConfig) => ({
   ...DEFAULT_VISUALIZER_CONFIG,
@@ -68,8 +78,11 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
   const [shufflePresets, setShufflePresetsState] = useState(config.shufflePresets);
   const [currentPresetName, setCurrentPresetName] = useState(null);
   const [error, setError] = useState(null);
+  const [options, setOptionsState] = useState(() => pickRuntimeOptions(config));
+  const optionsRef = useRef(options);
 
   useEffect(() => { shuffleRef.current = shufflePresets; }, [shufflePresets]);
+  useEffect(() => { optionsRef.current = options; }, [options]);
 
   const stopRenderer = useCallback(() => {
     if(rafIdRef.current) {
@@ -80,10 +93,10 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
 
   const startRenderer = useCallback(() => {
     if(rafIdRef.current) return;
-    const targetFps = config.targetFps || 0;
-    const frameInterval = targetFps > 0 ? (1000 / targetFps) : 0;
     let lastFrameTime = 0;
     const loop = (time) => {
+      const targetFps = optionsRef.current.targetFps || 0;
+      const frameInterval = targetFps > 0 ? (1000 / targetFps) : 0;
       if(frameInterval > 0) {
         const delta = time - lastFrameTime;
         if(delta < frameInterval) {
@@ -101,20 +114,20 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
       rafIdRef.current = requestAnimationFrame(loop);
     };
     rafIdRef.current = requestAnimationFrame(loop);
-  }, [config.targetFps]);
+  }, []);
 
   const resetPresetCycle = useCallback(() => {
     if(cycleTimeoutRef.current) {
       clearTimeout(cycleTimeoutRef.current);
       cycleTimeoutRef.current = null;
     }
-    if(!config.autoCycle) return;
+    if(!optionsRef.current.autoCycle) return;
     const tick = () => {
-      backendRef.current?.presetManager.nextPreset(config.blendTime, {shuffle : shuffleRef.current});
-      cycleTimeoutRef.current = setTimeout(tick, config.cycleInterval);
+      backendRef.current?.presetManager.nextPreset(optionsRef.current.blendTime, {shuffle : shuffleRef.current});
+      cycleTimeoutRef.current = setTimeout(tick, optionsRef.current.cycleInterval);
     };
-    cycleTimeoutRef.current = setTimeout(tick, config.cycleInterval);
-  }, [config.autoCycle, config.blendTime, config.cycleInterval]);
+    cycleTimeoutRef.current = setTimeout(tick, optionsRef.current.cycleInterval);
+  }, []);
 
   /* init backend once the user has interacted (AudioContext requires a gesture) */
   useEffect(() => {
@@ -206,6 +219,11 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
     };
   }, [isInteracted, config, audioRefs, startRenderer, resetPresetCycle, stopRenderer]);
 
+  /* re-arm the cycle timer when auto-cycle is toggled or its interval changes */
+  useEffect(() => {
+    if(ready) resetPresetCycle();
+  }, [ready, options.autoCycle, options.cycleInterval, resetPresetCycle]);
+
   /* pause / resume renderer on enabled or frozen toggle */
   useEffect(() => {
     if(!ready) return;
@@ -231,19 +249,19 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
 
   const controls = useMemo(() => ({
     nextPreset : () => {
-      backendRef.current?.presetManager.nextPreset(config.blendTime, {shuffle : shuffleRef.current});
+      backendRef.current?.presetManager.nextPreset(optionsRef.current.blendTime, {shuffle : shuffleRef.current});
       resetPresetCycle();
     },
     prevPreset : () => {
-      backendRef.current?.presetManager.prevPreset(config.blendTime);
+      backendRef.current?.presetManager.prevPreset(optionsRef.current.blendTime);
       resetPresetCycle();
     },
     randomPreset : () => {
-      backendRef.current?.presetManager.randomPreset(config.blendTime);
+      backendRef.current?.presetManager.randomPreset(optionsRef.current.blendTime);
       resetPresetCycle();
     },
     loadPreset : (idOrName) => {
-      backendRef.current?.presetManager.loadPreset(idOrName, config.blendTime);
+      backendRef.current?.presetManager.loadPreset(idOrName, optionsRef.current.blendTime);
       resetPresetCycle();
     },
     freeze       : () => setFrozen(true),
@@ -251,13 +269,14 @@ export const VisualizerProvider = ({children, config: userConfig}) => {
     toggleFreeze : () => setFrozen(v => !v),
     setEnabled,
     setShufflePresets : setShufflePresetsState,
+    setOptions        : (patch) => setOptionsState(prev => ({...prev, ...patch})),
     resetCycle        : resetPresetCycle,
-  }), [config.blendTime, resetPresetCycle]);
+  }), [resetPresetCycle]);
 
   const value = {
     canvasRef, config,
     ready, error,
-    enabled, frozen, shufflePresets, currentPresetName,
+    enabled, frozen, shufflePresets, currentPresetName, options,
     listPresets : () => backendRef.current?.presetManager.list() ?? [],
     controls,
   };

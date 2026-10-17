@@ -1,25 +1,44 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Button} from "@/components/ui/button";
 import {Slider} from "@/components/ui/slider";
-import {Tooltip} from "@/components/ui/tooltip";
-import {CloudIcon, DownloadIcon, Eye, EyeOff, ListIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, UploadIcon, Volume, Volume1, Volume2, VolumeX} from 'lucide-react';
+import {CloudIcon, DownloadIcon, Eye, EyeOff, ListIcon, PauseIcon, PlayIcon, Settings2, SkipBackIcon, SkipForwardIcon, UploadIcon, Volume, Volume1, Volume2, VolumeX} from 'lucide-react';
 import Visualizer from './Visualizer';
 import Sidebar from './Sidebar';
+import HintTooltip from './HintTooltip';
+import PresetHud from './PresetHud';
+import SettingsDialog from './SettingsDialog';
+import TrackTitle from './TrackTitle';
 import {exportPlaylistToM3U8, loadSoundCloudTrack} from '../utils/playlistUtils';
 import {useInteraction} from '../providers/InteractionProvider.jsx';
 import {usePlayback} from '../providers/PlaybackProvider.jsx';
 import {usePlaylist} from '../providers/PlaylistProvider.jsx';
 import {useVisualizer} from '../providers/VisualizerProvider.jsx';
+import {useSettings} from '../providers/SettingsProvider.jsx';
 import TypingIntro from './TypingIntro';
 import WelcomeScreen from './WelcomeScreen';
 import {AppConfig} from '@/config/AppConfig';
+import {TEXT_SCALES} from '@/config/settings';
+import {SHORTCUTS} from '@/config/shortcuts';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 
+/** m:ss, or h:mm:ss for long mixes; non-finite (live stream) → --:-- */
 const formatTime = (time) => {
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60);
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  if(!Number.isFinite(time)) return '--:--';
+  const total = Math.max(0, Math.floor(time));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = String(total % 60).padStart(2, '0');
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
 };
+
+/** focused element handles this key itself — global hot keys must not fire on top */
+const ownsKey = (target, key) => {
+  if(!(target instanceof HTMLElement)) return false;
+  if(target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return true;
+  return target.getAttribute('role') === 'slider' && key.startsWith('Arrow');
+};
+
+const TIME_LABEL_CLASS = 'min-w-[6ch] shrink-0 font-mono text-ui-sm font-medium tabular-nums text-white/90 text-halo';
 
 const getVolumeIcon = (vol) => {
   if(vol === 0) return VolumeX;
@@ -33,9 +52,12 @@ const MusicPlayer = () => {
   const {playlist, playlistName, setPlaylistName, select, next, prev, add, reorder} = usePlaylist();
   const {isInteracting, isInteracted} = useInteraction();
   const {enabled: visualizerEnabled, currentPresetName, controls: visualizerControls} = useVisualizer();
+  const {settings, updateSettings} = useSettings();
+  const {ui} = settings;
 
   const [showPlaylist, setShowPlaylist] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(ui.showIntro); // read once — the setting applies from the next visit
+  const [showSettings, setShowSettings] = useState(false);
   const [indicator, setIndicator] = useState('▶');
 
   const fileInputRef = useRef(null);
@@ -107,6 +129,17 @@ const MusicPlayer = () => {
     }
   }, [currentTrack, indicator, isPlaying]);
 
+  const autoShowPlaylist = () => {
+    if(!showPlaylistRestoredRef.current) {
+      setTimeout(() => setShowPlaylist(true), AppConfig.PLAYLIST_AUTO_SHOW_DELAY);
+    }
+  };
+
+  const handleIntroComplete = () => {
+    setShowIntro(false);
+    autoShowPlaylist();
+  };
+
   /** first user gesture → start playback */
   useEffect(() => {
     if(!isInteracted) return;
@@ -116,12 +149,20 @@ const MusicPlayer = () => {
     else if(!isPlaying) {
       toggle();
     }
+    if(!showIntro) {
+      autoShowPlaylist();
+    }
   }, [isInteracted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** hot keys */
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if(e.code === 'Space') {
+      if(showSettings || ownsKey(e.target, e.key)) return;
+      if(e.key === ',' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setShowSettings(true);
+      }
+      else if(e.code === 'Space') {
         e.preventDefault();
         toggle();
       }
@@ -149,7 +190,7 @@ const MusicPlayer = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggle, next, prev, visualizerControls]);
+  }, [toggle, next, prev, visualizerControls, showSettings]);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -183,10 +224,12 @@ const MusicPlayer = () => {
   };
 
   const VolumeIconComp = getVolumeIcon(volume);
+  const controlsOpacity = (!visualizerEnabled || isInteracting) ? ui.activeOpacity : ui.idleOpacity;
+  const toggleTimeMode = () => updateSettings('ui', {showRemaining : !ui.showRemaining});
 
   return (
   <>
-  <div className="relative h-screen bg-black bg-opacity-80 text-white">
+  <div className="relative h-screen bg-black bg-opacity-80 text-white" style={{'--ui-scale' : TEXT_SCALES[ui.textScale]}}>
       <Visualizer />
 
       {/* Mobile only: floating button to toggle visualizer renderer */}
@@ -201,6 +244,16 @@ const MusicPlayer = () => {
         </button>
       )}
 
+      {/* Preset HUD - góc trên màn hình, tách khỏi thông tin bài hát */}
+      {isInteracted && ui.showPresetName && visualizerEnabled && (
+        <PresetHud
+          name={currentPresetName}
+          active={isInteracting}
+          onPrev={visualizerControls.prevPreset}
+          onNext={visualizerControls.nextPreset}
+        />
+      )}
+
       {/* Welcome Screen - hiển thị trước khi user interaction */}
       {!isInteracted && (
         <WelcomeScreen />
@@ -208,15 +261,14 @@ const MusicPlayer = () => {
 
       {/* Typing Intro Overlay - hiển thị sau khi user đã interact */}
       {showIntro && isInteracted && (
-        <TypingIntro onComplete={() => {
-          setShowIntro(false);
-          if(!showPlaylistRestoredRef.current) {
-            setTimeout(() => setShowPlaylist(true), AppConfig.PLAYLIST_AUTO_SHOW_DELAY);
-          }
-        }} />
+        <TypingIntro onComplete={handleIntroComplete} />
       )}
 
-      <div className={`absolute inset-x-0 bottom-0 flex flex-col transition-opacity duration-300 ${!visualizerEnabled ? 'opacity-[0.85]' : isInteracting ? 'opacity-60' : 'opacity-5'}`}>
+      <div className="absolute inset-x-0 bottom-0 isolate flex flex-col transition-opacity duration-300" style={{opacity : controlsOpacity}}>
+        {/* scrim — keeps title / time / icons readable over bright presets */}
+        {ui.controlsBackdrop && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/45 to-transparent" />
+        )}
         {showPlaylist && (
         <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 max-h-[80vh] overflow-y-auto">
             <Sidebar
@@ -229,46 +281,55 @@ const MusicPlayer = () => {
             />
           </div>
         )}
-        <div className="bg-black bg-opacity-5 rounded-lg mx-4 mb-4 p-4">
-          {error && <div className="text-red-500 mb-2">{error}</div>}
-          <div className="flex items-center justify-center mb-2">
-            <div className="text-sm text-center text-yellow-700">{`Preset: ${currentPresetName}`}</div>
-          </div>
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm">{formatTime(currentTime)}</div>
-            <div className="text-sm text-center">{currentTrack?.title}</div>
-            <div className="text-sm">{formatTime(duration - currentTime)}</div>
+        <div className="bg-black bg-opacity-5 rounded-lg mx-4 mb-4 px-4 pb-4 pt-2 md:px-6">
+          {error && <div className="mb-2 text-center text-ui-sm font-medium text-red-300 text-halo">{error}</div>}
+
+          <TrackTitle title={currentTrack?.title} effects={ui.titleEffects} className="mb-1" />
+
+          {/* `dark` flips the vendored Slider tokens: bright played range on a dim track */}
+          <div className="dark flex items-center gap-3">
+            <span className={`${TIME_LABEL_CLASS} text-left`}>{formatTime(currentTime)}</span>
+            <Slider
+            className="flex-1"
+            value={[progress]}
+            max={100}
+            step={1}
+            onValueChange={(value) => {
+              if(duration > 0) {
+                seek((value[0] / 100) * duration);
+              }
+            }}
+            />
+            <HintTooltip content={ui.showRemaining ? 'Show total duration' : 'Show remaining time'}>
+              <button
+                type="button"
+                onClick={toggleTimeMode}
+                className={`${TIME_LABEL_CLASS} rounded text-right transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40`}
+              >
+                {ui.showRemaining ? `−${formatTime(duration - currentTime)}` : formatTime(duration)}
+              </button>
+            </HintTooltip>
           </div>
 
-          <Slider
-          value={[progress]}
-          max={100}
-          step={1}
-          onValueChange={(value) => {
-            if(duration > 0) {
-              seek((value[0] / 100) * duration);
-            }
-          }}
-          />
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center justify-between mt-3">
             {/* Mobile-only: playlist toggle */}
             <div className="flex md:hidden items-center">
-              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost" className="p-2">
+              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost" className="p-2" aria-label="Toggle playlist">
                 <ListIcon className="h-5 w-5" />
               </Button>
             </div>
             {/* Desktop-only: full left controls */}
             <div className="hidden md:flex items-center space-x-2">
-              <Tooltip content={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'} delayDuration={1000}>
+              <HintTooltip content={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'}>
                 <Button onClick={() => visualizerControls.setEnabled(v => !v)} variant="ghost">
                   {visualizerEnabled ? <Eye className="h-4 w-4 md:h-6 md:w-6" /> : <EyeOff className="h-4 w-4 md:h-6 md:w-6" />}
                 </Button>
-              </Tooltip>
-              <Tooltip content="Toggle Playlist" delayDuration={1000}>
+              </HintTooltip>
+              <HintTooltip content="Toggle Playlist">
                 <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
                   <ListIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
-              </Tooltip>
+              </HintTooltip>
               <input
                 type="file"
                 id="file-upload"
@@ -278,45 +339,45 @@ const MusicPlayer = () => {
                 accept="audio/*"
                 ref={fileInputRef}
               />
-              <Tooltip content="Upload Local File" delayDuration={1000}>
+              <HintTooltip content="Upload Local File" shortcut={SHORTCUTS.uploadLocal.keys}>
                 <Button onClick={() => fileInputRef.current.click()} variant="ghost">
                   <UploadIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
-              </Tooltip>
-              <Tooltip content="Add SoundCloud Track" delayDuration={1000}>
+              </HintTooltip>
+              <HintTooltip content="Add SoundCloud Track" shortcut={SHORTCUTS.addSoundCloud.keys}>
                 <Button onClick={handleSoundCloudUpload} variant="ghost">
                   <CloudIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
-              </Tooltip>
+              </HintTooltip>
             </div>
             <div className="flex-1 flex items-center justify-center space-x-2 md:space-x-4">
-              <Tooltip content="Previous Track" delayDuration={1000}>
+              <HintTooltip content={SHORTCUTS.prevTrack.label} shortcut={SHORTCUTS.prevTrack.keys}>
                 <Button onClick={prev} variant="ghost" className="p-2">
                   <SkipBackIcon className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
-              </Tooltip>
-              <Tooltip content={isPlaying ? "Pause" : "Play"} delayDuration={1000}>
+              </HintTooltip>
+              <HintTooltip content={isPlaying ? "Pause" : "Play"} shortcut={SHORTCUTS.togglePlay.keys}>
                 <Button onClick={toggle} variant="ghost" className="h-11 w-11 md:h-12 md:w-12 rounded-full p-0 flex items-center justify-center">
                   {isPlaying ?
                     <PauseIcon className="h-6 w-6 md:h-7 md:w-7" /> :
                     <PlayIcon className="h-6 w-6 md:h-7 md:w-7" />
                   }
                 </Button>
-              </Tooltip>
-              <Tooltip content="Next Track" delayDuration={1000}>
+              </HintTooltip>
+              <HintTooltip content={SHORTCUTS.nextTrack.label} shortcut={SHORTCUTS.nextTrack.keys}>
                 <Button onClick={next} variant="ghost" className="p-2">
                   <SkipForwardIcon className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
-              </Tooltip>
+              </HintTooltip>
             </div>
             <div className="flex items-center space-x-2">
-              <Tooltip content="Export Playlist" delayDuration={1000}>
+              <HintTooltip content="Export Playlist">
                 <Button onClick={handleExportPlaylist} variant="ghost" className="hidden md:inline-flex">
                   <DownloadIcon className="h-4 w-4 md:h-6 md:w-6" />
                 </Button>
-              </Tooltip>
+              </HintTooltip>
               {/* Desktop: inline volume slider */}
-              <div className="hidden md:block w-24">
+              <div className="dark hidden md:block w-24">
                 <Slider
                   value={[volume * 100]}
                   max={100}
@@ -331,7 +392,7 @@ const MusicPlayer = () => {
                     <VolumeIconComp className="h-5 w-5" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent side="top" align="end" className="w-40 p-3 bg-black/90 border border-white/20 text-white">
+                <PopoverContent side="top" align="end" className="dark w-40 p-3 bg-black/90 border border-white/20 text-white">
                   <div className="flex items-center gap-2">
                     <VolumeIconComp className="h-4 w-4 shrink-0 text-white/70" />
                     <Slider
@@ -343,6 +404,11 @@ const MusicPlayer = () => {
                   </div>
                 </PopoverContent>
               </Popover>
+              <HintTooltip content="Settings" shortcut={SHORTCUTS.openSettings.keys}>
+                <Button onClick={() => setShowSettings(true)} variant="ghost" className="p-2 md:px-4" aria-label="Settings">
+                  <Settings2 className="h-5 w-5 md:h-6 md:w-6" />
+                </Button>
+              </HintTooltip>
             </div>
           </div>
         </div>
@@ -350,6 +416,7 @@ const MusicPlayer = () => {
       {/* audio element is owned by PlaybackProvider */}
     </div>
 
+    <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
   </>
   );
 };

@@ -7,32 +7,37 @@ import {InteractionProvider} from '@/providers/InteractionProvider.jsx';
 import {PlaybackProvider} from '@/providers/PlaybackProvider.jsx';
 import {PlaylistProvider} from '@/providers/PlaylistProvider.jsx';
 import {VisualizerProvider} from '@/providers/VisualizerProvider.jsx';
+import {SettingsProvider} from '@/providers/SettingsProvider.jsx';
 import {MediaSessionBinder} from '@/components/MediaSessionBinder.jsx';
+import {VisualizerSettingsBinder} from '@/components/VisualizerSettingsBinder.jsx';
 
 const queryClient = new QueryClient();
 
 const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
-    <InteractionProvider>
-      <PlaybackProvider>
-        <PlaylistProvider>
-          <VisualizerProvider>
-            <TooltipProvider>
-              <Toaster />
-              <MediaSessionBinder />
-              <BrowserRouter>
-                <Routes>
-                  {navItems.map(({ to, page }) => (
-                  <Route key={to} path={to} element={page} />
-                  ))}
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </VisualizerProvider>
-        </PlaylistProvider>
-      </PlaybackProvider>
-    </InteractionProvider>
+    <SettingsProvider>
+      <InteractionProvider>
+        <PlaybackProvider>
+          <PlaylistProvider>
+            <VisualizerProvider>
+              <TooltipProvider>
+                <Toaster />
+                <MediaSessionBinder />
+                <VisualizerSettingsBinder />
+                <BrowserRouter>
+                  <Routes>
+                    {navItems.map(({ to, page }) => (
+                    <Route key={to} path={to} element={page} />
+                    ))}
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </VisualizerProvider>
+          </PlaylistProvider>
+        </PlaybackProvider>
+      </InteractionProvider>
+    </SettingsProvider>
   </QueryClientProvider>
   );
 };

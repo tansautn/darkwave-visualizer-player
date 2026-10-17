@@ -19,6 +19,21 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        /* self-hosted via @fontsource (see src/main.jsx); both ship a Vietnamese subset */
+        ui: ['"Be Vietnam Pro"', "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ['"Roboto Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      fontSize: {
+        /* player typography scale — follows the `--ui-scale` CSS var (Settings → Text size) */
+        "ui-2xs": ["calc(0.6875rem * var(--ui-scale, 1))", { lineHeight: "1rem" }],
+        "ui-xs": ["calc(0.75rem * var(--ui-scale, 1))", { lineHeight: "1.4" }],
+        "ui-sm": ["calc(0.875rem * var(--ui-scale, 1))", { lineHeight: "1.45" }],
+        "ui-base": ["calc(1rem * var(--ui-scale, 1))", { lineHeight: "1.7" }],
+        "ui-lg": ["calc(1.125rem * var(--ui-scale, 1))", { lineHeight: "1.7" }],
+        "ui-2xl": ["calc(1.5rem * var(--ui-scale, 1))", { lineHeight: "1.25" }],
+        "ui-3xl": ["calc(1.875rem * var(--ui-scale, 1))", { lineHeight: "1.2" }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

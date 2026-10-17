@@ -30,10 +30,14 @@ Single-page Vite + React 18 app. **One route (`/`), one page component (`Index`)
 ### Provider tree (App.jsx)
 ```
 QueryClientProvider
-  └─ InteractionProvider   ← tracks first user gesture + activity state
-       └─ TooltipProvider
-            └─ BrowserRouter → <Index> → <MusicPlayer>
+  └─ SettingsProvider        ← persisted player settings (localStorage['darkwave-settings'])
+       └─ InteractionProvider   ← tracks first user gesture + activity state
+            └─ PlaybackProvider → PlaylistProvider → VisualizerProvider
+                 └─ TooltipProvider
+                      ├─ MediaSessionBinder, VisualizerSettingsBinder   (headless)
+                      └─ BrowserRouter → <Index> → <MusicPlayer>
 ```
+See `docs/architect/` for the provider internals.
 
 ### Core components
 
@@ -45,6 +49,11 @@ QueryClientProvider
 | `WelcomeScreen.jsx` | Looping video background shown before first user interaction. |
 | `TypingIntro.jsx` | Typing animation overlay shown after first interaction, before playback starts. |
 | `InteractionProvider.jsx` | `isInteracted` (one-time first gesture, triggers autoplay + visualizer init) vs `isInteracting` (activity within 3 s window, drives overlay opacity). |
+| `TrackTitle.jsx` | Song title as inline SVG (outline + shadow layers, "Zuko" in the disco mosaic). viewBox fitted to measured text; long titles ping-pong scroll. CSS in the `.track-title*` block of `src/index.css`. |
+| `PresetHud.jsx` | Preset name overlay (top-left mobile / top-right desktop); flashes on change, otherwise follows `isInteracting`. |
+| `SettingsDialog.jsx` | Settings modal (gear button or `,`). Display + Visualizer + Shortcuts tabs. |
+| `HintTooltip.jsx` | The tooltip to use for controls — portals out of the dimmed control bar, optional key caps. Don't use the raw shadcn `Tooltip` root directly. |
+| `SettingsProvider.jsx` | `useSettings()` → `{settings, updateSettings(section, patch), resetSettings}`. Shape/defaults in `src/config/settings.js`; stored values are sanitized against the defaults, so new fields need no migration. |
 
 ### Data flow: playlist & playback persistence
 
@@ -61,7 +70,15 @@ Track URLs in `default.js` may contain non-ASCII characters (Vietnamese filename
 
 The butterchurn visualizer requires `AudioContext`, which browsers block until a user gesture. `Visualizer.jsx` polls `isInteracted` (100 ms interval) before creating the `AudioContext`. The audio element must have `crossOrigin="anonymous"` for `createMediaElementSource` to work across origins.
 
-Preset auto-cycles every 18 s (`PRESET_CHANGE_DELAY`). Arrow keys (`←`/`→`) cycle presets manually; `↑`/`↓` change tracks; `Space` toggles play.
+Preset auto-cycles every 18 s by default. `autoCycle`, `cycleInterval`, `blendTime`, `targetFps` are runtime options of VisualizerProvider (`controls.setOptions`) — changing them never re-inits the backend. `VisualizerSettingsBinder` pushes the persisted Settings values into them.
+
+Hot keys (handler in `MusicPlayer.jsx`, display labels in `src/config/shortcuts.js` — keep both in sync): `←`/`→` presets, `↑`/`↓` tracks, `Space` play, `Enter` / `Shift+Enter` add track, `,` settings. They are ignored while the settings dialog is open or when focus is in an input / slider.
+
+### Typography
+
+- Fonts are self-hosted via `@fontsource/be-vietnam-pro` (`font-ui`, Vietnamese-first sans) and `@fontsource/roboto-mono` (`font-mono`), imported in `src/main.jsx`.
+- Player text uses the `text-ui-*` sizes from `tailwind.config.js`; they multiply by the `--ui-scale` CSS var that MusicPlayer sets from Settings → Text size.
+- Small text drawn straight over the visualizer gets `.text-halo` (`src/index.css`).
 
 ### shadcn/ui components
 

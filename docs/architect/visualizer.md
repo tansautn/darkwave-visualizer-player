@@ -128,6 +128,10 @@ just saw.
 - `frozen` — freeze frame; render loop is stopped without disconnecting audio
   or destroying state.
 - `shufflePresets` — mirrors config default; toggled from UI.
+- `options` — `{autoCycle, cycleInterval, blendTime, targetFps}`, seeded from
+  config, tunable at runtime (Settings dialog via VisualizerSettingsBinder).
+  Mirrored into `optionsRef`, which the RAF loop and cycle tick read, so a
+  change never tears down the backend.
 - `currentPresetName` — updated whenever the preset manager emits `change`.
 - `listPresets()` — returns `PresetMeta[]` for pickers.
 - `controls` — see below.
@@ -141,6 +145,7 @@ just saw.
 - `setEnabled(bool | fn)` — toggle the renderer entirely. When `false`,
   canvas fades to `opacity-10`.
 - `setShufflePresets(bool | fn)` — flips auto-advance policy.
+- `setOptions(patch)` — shallow-merge into `options`.
 - `resetCycle()` — restart the cycle timer (exposed for consumers that
   loaded a preset directly against the backend).
 
@@ -157,12 +162,16 @@ just saw.
 - `rafIdRef` — current RAF id, or `null` when the loop is stopped.
 - `cycleTimeoutRef` — current cycle timer id.
 - `shuffleRef` — mirror of state, read from inside the cycle tick closure.
+- `optionsRef` — mirror of `options`, read per frame (`targetFps`) and per
+  cycle tick (`autoCycle`, `cycleInterval`, `blendTime`).
 
 **Event reactions:**
 | Event | Reaction |
 |---|---|
 | `isInteracted` flips true | init AudioContext + delay (if not already), create a `MediaElementSource` **per audio slot** (A and B) and connect both into delay → destination, create backend from `config.backend`, `backend.init(...)`, subscribe to preset change events, load `startPreset`, `backend.connectAudio(delayNode)`, start RAF, start cycle timer. |
 | `config` reference changes | full teardown of backend (dispose + clear refs), rerun init. AudioContext + source/delay/destination are kept. |
+| `options.autoCycle` or `options.cycleInterval` change (after `ready`) | `resetCycle()` — re-arm (or stop) the cycle timer with the new values. |
+| `options.blendTime` / `options.targetFps` change | nothing to do — read from `optionsRef` on the next preset change / frame. |
 | `enabled` or `frozen` change (after `ready`) | start RAF if `enabled && !frozen`, stop otherwise. |
 | `document.visibilitychange` → hidden | `stopRenderer()` — audio graph left connected, only the RAF loop is paused. |
 | `document.visibilitychange` → visible | `startRenderer()` if `ready && enabled && !frozen`. |
@@ -212,7 +221,7 @@ stateDiagram-v2
   [*] --> Waiting
   Waiting --> Firing: cycleInterval elapsed
   Firing --> Waiting: presetManager.nextPreset(...) → resetCycle()
-  Waiting --> Off: config.autoCycle = false OR provider unmounting
+  Waiting --> Off: options.autoCycle = false OR provider unmounting
   Off --> Waiting: resetCycle()
   Waiting --> Off: user navigates manually (still calls resetCycle to arm the next tick)
 ```

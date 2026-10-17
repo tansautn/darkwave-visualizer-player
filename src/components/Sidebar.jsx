@@ -2,24 +2,13 @@ import React from 'react';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {CloudIcon, GripVertical, Music} from 'lucide-react';
 import {Input} from "@/components/ui/input";
+import {tokenizeTitle} from '@/utils/titleTokens';
 
-const ZUKO_TOKENS = ['Zuko', '🇿🇺🇰🅾'];
-
-const renderTitle = (title) => {
-  let parts = [title];
-  for (const token of ZUKO_TOKENS) {
-    parts = parts.flatMap((seg, si) => {
-      if (typeof seg !== 'string') return [seg];
-      const chunks = seg.split(token);
-      return chunks.flatMap((chunk, ci) =>
-        ci < chunks.length - 1
-          ? [chunk, <img key={`${si}-${ci}`} src="/zuko_disco_centered.svg?t=1" alt="Zuko" style={{height: '1.8em', verticalAlign: 'middle', display: 'inline-block', margin: '-12px'}} />]
-          : [chunk]
-      );
-    });
-  }
-  return parts;
-};
+const renderTitle = (title) => tokenizeTitle(title).map((token, i) => (
+  token.isZuko
+    ? <img key={i} src="/zuko_disco_centered.svg?t=1" alt="Zuko" style={{height: '1.8em', verticalAlign: 'middle', display: 'inline-block', margin: '-12px'}} />
+    : token.text
+));
 
 const Sidebar = ({ playlist, currentTrack, onTrackSelect, onReorder, playlistName, onPlaylistNameChange }) => {
   const onDragEnd = (result) => {

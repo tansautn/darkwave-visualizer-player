@@ -10,24 +10,30 @@ and stays unaware of the others' internals.
 graph TD
   App[App.jsx]
   QC[QueryClientProvider]
+  SP[SettingsProvider]
   IP[InteractionProvider]
   PB[PlaybackProvider]
   PL[PlaylistProvider]
   VP[VisualizerProvider]
   TT[TooltipProvider]
   MSB[MediaSessionBinder — headless]
+  VSB[VisualizerSettingsBinder — headless]
   Router[BrowserRouter → Routes → Index]
   MP[MusicPlayer]
   VZ[Visualizer]
 
-  App --> QC --> IP --> PB --> PL --> VP --> TT
+  App --> QC --> SP --> IP --> PB --> PL --> VP --> TT
   TT --> MSB
+  TT --> VSB
   TT --> Router --> MP
   MP --> VZ
 ```
 
 Nesting order is intentional:
 
+- **SettingsProvider** — persisted user preferences; depends on nothing, so it
+  sits outermost and anything can read it. It never calls into other
+  providers: headless binders (VisualizerSettingsBinder) push its values in.
 - **InteractionProvider** — first user gesture unlocks Web Audio; it must be
   above anything that depends on it.
 - **PlaybackProvider** — owns the `<audio>` element and its state, so both
@@ -50,9 +56,13 @@ Nesting order is intentional:
 src/
   providers/
     InteractionProvider.jsx
+    SettingsProvider.jsx         # persisted settings, useSettings()
     PlaybackProvider.jsx
     PlaylistProvider.jsx
     VisualizerProvider.jsx
+  config/
+    settings.js                # DEFAULT_SETTINGS, TEXT_SCALES, sanitizeSettings
+    shortcuts.js               # hot key labels (tooltips + settings dialog)
   storage/
     localPlaylistStore.js      # PlaylistStore contract, localStorage impl
   visualizer/
@@ -67,12 +77,17 @@ src/
     MusicPlayer.jsx            # UI only — reads all state via hooks
     Visualizer.jsx             # thin canvas view
     MediaSessionBinder.jsx     # headless — wires Media Session API
+    VisualizerSettingsBinder.jsx  # headless — settings → visualizer runtime options
+    SettingsDialog.jsx         # settings modal
+    TrackTitle.jsx             # SVG song title
+    PresetHud.jsx              # preset name overlay
 ```
 
 ## Object catalog (quick reference)
 
 | Object | Owns | Exposed via |
 |---|---|---|
+| SettingsProvider | `settings` `{ui, visualizer}` persisted to `localStorage['darkwave-settings']` | `useSettings()` |
 | InteractionProvider | `isInteracted` (one-time first gesture), `isInteracting` (3 s activity window) | `useInteraction()` |
 | PlaybackProvider | two `<audio>` elements (A/B slots), `isPlaying`, `currentTime`, `duration`, `volume`, `error`, `currentTrack`, preload state | `usePlayback()` |
 | PlaylistProvider | `playlist[]`, `playlistName`, `currentIndex`, persisted playback state, next-track preload trigger | `usePlaylist()` |

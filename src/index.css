@@ -90,6 +90,125 @@
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out forwards;
   }
+
+  /* tight dark halo for small text drawn straight over the visualizer */
+  .text-halo {
+    text-shadow:
+      0 0 1px rgb(0 0 0 / 0.9),
+      0 1px 2px rgb(0 0 0 / 0.85),
+      0 0 10px rgb(0 0 0 / 0.55);
+  }
+}
+
+@layer components {
+  /* key cap — tooltips + settings shortcut list */
+  .kbd {
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[11px] font-medium leading-none text-white/85;
+    box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  /* small icon button inside the preset HUD */
+  .hud-button {
+    @apply flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
+  }
+}
+
+/* ==================================================================
+   TRACK TITLE — SVG song title (src/components/TrackTitle.jsx)
+   Height is the only size knob: the SVG viewBox is fitted to the text,
+   width follows from --title-ratio. Long titles ping-pong scroll.
+   ================================================================== */
+.track-title {
+  --title-h: calc(2.25rem * var(--ui-scale, 1));
+  display: flex;
+  justify-content: center;
+  min-height: var(--title-h);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .track-title { --title-h: calc(3rem * var(--ui-scale, 1)); }
+}
+
+.track-title__strip {
+  flex: none;
+  max-width: 100%;
+}
+
+.track-title__svg {
+  display: block;
+  height: var(--title-h);
+  width: calc(var(--title-h) * var(--title-ratio, 8));
+  overflow: visible;
+}
+.track-title__svg text {
+  font-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  white-space: pre;
+}
+
+/* marquee: strip slides by --title-shift, edges fade out over --title-fade */
+.track-title--marquee {
+  justify-content: flex-start;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--title-fade), #000 calc(100% - var(--title-fade)), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 var(--title-fade), #000 calc(100% - var(--title-fade)), transparent);
+}
+.track-title--marquee .track-title__strip {
+  max-width: none;
+  padding-inline: var(--title-fade);
+  animation: trackTitleMarquee var(--title-duration) ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes trackTitleMarquee {
+  0%, 12%   { transform: translateX(0); }
+  88%, 100% { transform: translateX(var(--title-shift)); }
+}
+
+/* effects — pastel hue drift on the fill, neon rim, pulsing disco tiles.
+   Fill stays light on purpose: contrast against the dark outline first. */
+.track-title__svg--fx .tt-hue-a  { animation: ttHueA 8s linear infinite; }
+.track-title__svg--fx .tt-hue-b  { animation: ttHueA 8s linear infinite; animation-delay: -4s; }
+.track-title__svg--fx .tt-edge-a { animation: ttEdge 4s linear infinite; }
+.track-title__svg--fx .tt-edge-b { animation: ttEdge 4s linear infinite; animation-delay: -2s; }
+.track-title__svg--fx .tt-pulse-1 { animation: ttPulse 1.4s ease-in-out infinite; }
+.track-title__svg--fx .tt-pulse-2 { animation: ttPulse 1.4s ease-in-out infinite; animation-delay: .18s; }
+.track-title__svg--fx .tt-pulse-3 { animation: ttPulse 1.4s ease-in-out infinite; animation-delay: .36s; }
+.track-title__svg--fx .tt-pulse-4 { animation: ttPulse 1.4s ease-in-out infinite; animation-delay: .54s; }
+
+@keyframes ttHueA {
+  0%, 100% { stop-color: #ffe3f4; }
+  25%      { stop-color: #d8f7ff; }
+  50%      { stop-color: #e6ffd9; }
+  75%      { stop-color: #fff4c7; }
+}
+@keyframes ttEdge {
+  0%, 100% { stop-color: #ff6eb4; }
+  25%      { stop-color: #66eeff; }
+  50%      { stop-color: #a0ff80; }
+  75%      { stop-color: #ffe066; }
+}
+@keyframes ttPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-title--marquee {
+    -webkit-mask-image: none;
+            mask-image: none;
+  }
+  .track-title--marquee .track-title__strip {
+    max-width: 100%;
+    padding-inline: 0;
+    animation: none;
+  }
+  /* no scrolling → shrink the title to fit */
+  .track-title__svg {
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: var(--title-ratio, 8);
+  }
+  .track-title__svg--fx * { animation: none !important; }
 }
 
 /* ==================================================================
