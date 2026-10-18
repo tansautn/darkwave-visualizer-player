@@ -48,9 +48,9 @@ See `docs/architect/` for the provider internals.
 | `Sidebar.jsx` | Playlist panel with react-beautiful-dnd drag-and-drop reordering. |
 | `WelcomeScreen.jsx` | Looping video background shown before first user interaction. |
 | `TypingIntro.jsx` | Typing animation overlay shown after first interaction, before playback starts. |
-| `InteractionProvider.jsx` | `isInteracted` (one-time first gesture, triggers autoplay + visualizer init) vs `isInteracting` (activity within 3 s window, drives overlay opacity). |
+| `InteractionProvider.jsx` | `isInteracted` (one-time first gesture, triggers autoplay + visualizer init) vs `isInteracting` (activity within `IDLE_TIMEOUT_MS`, drives overlay opacity) vs `isTapGuarded` (up from `TAP_GUARD_LEAD_MS` before the dim until `TAP_GUARD_RELEASE_MS` after the next input — MusicPlayer covers the controls with a transparent div while it is up, so the first tap on dimmed controls only wakes them). Timings in `src/config/AppConfig.js`. |
 | `TrackTitle.jsx` | Song title as inline SVG (outline + shadow layers, "Zuko" in the disco mosaic). viewBox fitted to measured text; long titles ping-pong scroll. CSS in the `.track-title*` block of `src/index.css`. |
-| `PresetHud.jsx` | Preset name overlay (top-left mobile / top-right desktop); flashes on change, otherwise follows `isInteracting`. |
+| `PresetHud.jsx` | Preset name overlay (top-left mobile / top-right desktop). Mode `auto` flashes on change and follows `isInteracting`; `always` never hides. Prev/next buttons only take taps while interacting. |
 | `SettingsDialog.jsx` | Settings modal (gear button or `,`). Display + Visualizer + Shortcuts tabs. |
 | `HintTooltip.jsx` | The tooltip to use for controls — portals out of the dimmed control bar, optional key caps. Don't use the raw shadcn `Tooltip` root directly. |
 | `SettingsProvider.jsx` | `useSettings()` → `{settings, updateSettings(section, patch), resetSettings}`. Shape/defaults in `src/config/settings.js`; stored values are sanitized against the defaults, so new fields need no migration. |
@@ -79,6 +79,7 @@ Hot keys (handler in `MusicPlayer.jsx`, display labels in `src/config/shortcuts.
 - Fonts are self-hosted via `@fontsource/be-vietnam-pro` (`font-ui`, Vietnamese-first sans) and `@fontsource/roboto-mono` (`font-mono`), imported in `src/main.jsx`.
 - Player text uses the `text-ui-*` sizes from `tailwind.config.js`; they multiply by the `--ui-scale` CSS var that MusicPlayer sets from Settings → Text size.
 - Small text drawn straight over the visualizer gets `.text-halo` (`src/index.css`).
+- Dimming is applied per region in MusicPlayer (scrim, playlist, title, transport rows), not on the whole control container — that is what lets Settings → Track title stay lit (`always`, or `TITLE_FLASH_MS` after a track change) while the rest dims. `useFlashOnChange` (`src/hooks/`) drives both the title and preset flashes.
 
 ### shadcn/ui components
 

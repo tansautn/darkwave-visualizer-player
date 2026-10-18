@@ -109,7 +109,7 @@
 
   /* small icon button inside the preset HUD */
   .hud-button {
-    @apply flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
+    @apply flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
   }
 }
 

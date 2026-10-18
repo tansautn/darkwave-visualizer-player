@@ -9,16 +9,28 @@
 
  * @CREATED    : 11:40 PM , 01/Oct/2024
  */
+/*
+ * Exposes via useInteraction():
+ *   isInteracted   one-time first gesture (unlocks autoplay + AudioContext)
+ *   isInteracting  input within the last IDLE_TIMEOUT_MS → controls undimmed
+ *   isTapGuarded   tap guard is up: from TAP_GUARD_LEAD_MS before the dim
+ *                  until TAP_GUARD_RELEASE_MS after the next input. While up,
+ *                  the first tap on dimmed controls only wakes them.
+ */
 import React, {createContext, useContext, useEffect, useRef, useState} from 'react';
+import {AppConfig} from '@/config/AppConfig';
 
-const InteractionContext = createContext({ isInteracted : false, isInteracting : false });
+const InteractionContext = createContext({ isInteracted : false, isInteracting : false, isTapGuarded : false });
 
 export const useInteraction = () => useContext(InteractionContext);
 
 export const InteractionProvider = ({ children }) => {
   const [isInteracted, setIsInteracted] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [isTapGuarded, setIsTapGuarded] = useState(false);
   const timeoutIds = useRef([]);
+  const tapGuardRef = useRef(false);
+  const guardReleaseId = useRef(null);
   const interactionTriggered = useRef(false); // Đảm bảo chỉ trigger một lần
 
   const handleInteraction = () => {
@@ -28,11 +40,25 @@ export const InteractionProvider = ({ children }) => {
       clearTimeout(timeoutIds.current.pop());
     }
 
-    const newTimeoutId = setTimeout(() => {
-      setIsInteracting(false);
-    }, 3000);
+    // Tap đánh thức UI: giữ guard thêm một chút để chính cú tap đó
+    // (touchend → mousedown → click) không rơi xuống control bên dưới.
+    // Chỉ hẹn một lần — event tiếp theo trong cùng cú tap không đẩy lùi.
+    if(tapGuardRef.current && !guardReleaseId.current) {
+      guardReleaseId.current = setTimeout(() => {
+        guardReleaseId.current = null;
+        tapGuardRef.current = false;
+        setIsTapGuarded(false);
+      }, AppConfig.TAP_GUARD_RELEASE_MS);
+    }
 
-    timeoutIds.current.push(newTimeoutId);
+    timeoutIds.current.push(setTimeout(() => {
+      tapGuardRef.current = true;
+      setIsTapGuarded(true);
+    }, AppConfig.IDLE_TIMEOUT_MS - AppConfig.TAP_GUARD_LEAD_MS));
+
+    timeoutIds.current.push(setTimeout(() => {
+      setIsInteracting(false);
+    }, AppConfig.IDLE_TIMEOUT_MS));
   };
 
   const handleFirstUserGesture = () => {
@@ -67,11 +93,12 @@ export const InteractionProvider = ({ children }) => {
       while(timeoutIds.current.length) {
         clearTimeout(timeoutIds.current.pop());
       }
+      clearTimeout(guardReleaseId.current);
     };
   }, []);
 
   return (
-  <InteractionContext.Provider value={{ isInteracted, isInteracting }}>
+  <InteractionContext.Provider value={{ isInteracted, isInteracting, isTapGuarded }}>
       {children}
     </InteractionContext.Provider>
   );

@@ -4,40 +4,32 @@
  * The preset belongs to the visualizer layer, not to the track, so it lives
  * away from the track title / transport: top-left on mobile (top-right holds
  * the visualizer toggle), top-right on desktop (clear of the playlist name
- * field when the playlist is open). It flashes in for FLASH_MS whenever the
- * preset changes and otherwise follows the user-activity window.
+ * field when the playlist is open).
+ *
+ * Modes: 'auto' flashes in for PRESET_FLASH_MS on every preset change and
+ * otherwise follows the user-activity window; 'always' never hides.
+ * The prev/next buttons only take taps while the user is active — a HUD
+ * that is merely flashing or pinned is read-only, like the dimmed controls.
  *
  * @param {string|null} name   current preset name
+ * @param {'auto'|'always'} [mode]
  * @param {boolean} active     user is interacting (InteractionProvider.isInteracting)
  * @param {() => void} onPrev
  * @param {() => void} onNext
  */
-import {useEffect, useState} from 'react';
 import {ChevronLeft, ChevronRight} from 'lucide-react';
 import HintTooltip from './HintTooltip';
+import {AppConfig} from '@/config/AppConfig';
 import {SHORTCUTS} from '@/config/shortcuts';
+import {useFlashOnChange} from '@/hooks/useFlashOnChange';
 
-const FLASH_MS = 4000;
-
-const PresetHud = ({name, active, onPrev, onNext}) => {
-  const [shownName, setShownName] = useState(name);
-  const [flashing, setFlashing] = useState(false);
-
-  /* new preset → flash (state adjusted during render, no extra effect pass) */
-  if(name !== shownName) {
-    setShownName(name);
-    setFlashing(Boolean(name));
-  }
-
-  useEffect(() => {
-    if(!flashing) return;
-    const timeout = setTimeout(() => setFlashing(false), FLASH_MS);
-    return () => clearTimeout(timeout);
-  }, [flashing, shownName]);
+const PresetHud = ({name, mode = 'auto', active, onPrev, onNext}) => {
+  const flashing = useFlashOnChange(name, AppConfig.PRESET_FLASH_MS);
 
   if(!name) return null;
 
-  const visible = active || flashing;
+  const visible = mode === 'always' || active || flashing;
+  const buttonState = active ? '' : 'pointer-events-none opacity-0';
 
   return (
   <div
@@ -46,7 +38,7 @@ const PresetHud = ({name, active, onPrev, onNext}) => {
     }`}
   >
       <HintTooltip content={SHORTCUTS.prevPreset.label} shortcut={SHORTCUTS.prevPreset.keys} side="bottom">
-        <button type="button" onClick={onPrev} className="hud-button" aria-label={SHORTCUTS.prevPreset.label}>
+        <button type="button" onClick={onPrev} className={`hud-button ${buttonState}`} aria-label={SHORTCUTS.prevPreset.label}>
           <ChevronLeft className="h-4 w-4" />
         </button>
       </HintTooltip>
@@ -59,7 +51,7 @@ const PresetHud = ({name, active, onPrev, onNext}) => {
         </div>
       </div>
       <HintTooltip content={SHORTCUTS.nextPreset.label} shortcut={SHORTCUTS.nextPreset.keys} side="bottom">
-        <button type="button" onClick={onNext} className="hud-button" aria-label={SHORTCUTS.nextPreset.label}>
+        <button type="button" onClick={onNext} className={`hud-button ${buttonState}`} aria-label={SHORTCUTS.nextPreset.label}>
           <ChevronRight className="h-4 w-4" />
         </button>
       </HintTooltip>

@@ -88,7 +88,7 @@ src/
 | Object | Owns | Exposed via |
 |---|---|---|
 | SettingsProvider | `settings` `{ui, visualizer}` persisted to `localStorage['darkwave-settings']` | `useSettings()` |
-| InteractionProvider | `isInteracted` (one-time first gesture), `isInteracting` (3 s activity window) | `useInteraction()` |
+| InteractionProvider | `isInteracted` (one-time first gesture), `isInteracting` (`IDLE_TIMEOUT_MS` activity window), `isTapGuarded` (tap guard over dimmed controls) | `useInteraction()` |
 | PlaybackProvider | two `<audio>` elements (A/B slots), `isPlaying`, `currentTime`, `duration`, `volume`, `error`, `currentTrack`, preload state | `usePlayback()` |
 | PlaylistProvider | `playlist[]`, `playlistName`, `currentIndex`, persisted playback state, next-track preload trigger | `usePlaylist()` |
 | VisualizerProvider | canvas, backend instance, RAF loop, cycle timer, AudioContext + dual source graph, visibility handler | `useVisualizer()` |

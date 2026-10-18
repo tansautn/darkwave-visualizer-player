@@ -19,6 +19,7 @@ import WelcomeScreen from './WelcomeScreen';
 import {AppConfig} from '@/config/AppConfig';
 import {TEXT_SCALES} from '@/config/settings';
 import {SHORTCUTS} from '@/config/shortcuts';
+import {useFlashOnChange} from '@/hooks/useFlashOnChange';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 
 /** m:ss, or h:mm:ss for long mixes; non-finite (live stream) → --:-- */
@@ -38,6 +39,8 @@ const ownsKey = (target, key) => {
   return target.getAttribute('role') === 'slider' && key.startsWith('Arrow');
 };
 
+const DIM_TRANSITION = 'transition-opacity duration-300';
+
 const TIME_LABEL_CLASS = 'min-w-[6ch] shrink-0 font-mono text-ui-sm font-medium tabular-nums text-white/90 text-halo';
 
 const getVolumeIcon = (vol) => {
@@ -50,7 +53,7 @@ const getVolumeIcon = (vol) => {
 const MusicPlayer = () => {
   const {currentTrack, isPlaying, currentTime, duration, volume, error, toggle, seek, setVolume} = usePlayback();
   const {playlist, playlistName, setPlaylistName, select, next, prev, add, reorder} = usePlaylist();
-  const {isInteracting, isInteracted} = useInteraction();
+  const {isInteracting, isInteracted, isTapGuarded} = useInteraction();
   const {enabled: visualizerEnabled, currentPresetName, controls: visualizerControls} = useVisualizer();
   const {settings, updateSettings} = useSettings();
   const {ui} = settings;
@@ -59,6 +62,7 @@ const MusicPlayer = () => {
   const [showIntro, setShowIntro] = useState(ui.showIntro); // read once — the setting applies from the next visit
   const [showSettings, setShowSettings] = useState(false);
   const [indicator, setIndicator] = useState('▶');
+  const titleFlashing = useFlashOnChange(currentTrack?.id, AppConfig.TITLE_FLASH_MS);
 
   const fileInputRef = useRef(null);
   const showPlaylistRestoredRef = useRef(false);
@@ -224,7 +228,12 @@ const MusicPlayer = () => {
   };
 
   const VolumeIconComp = getVolumeIcon(volume);
-  const controlsOpacity = (!visualizerEnabled || isInteracting) ? ui.activeOpacity : ui.idleOpacity;
+  /* dimming is applied per region, so the title can stay lit while the rest dims */
+  const controlsActive = !visualizerEnabled || isInteracting;
+  const controlsOpacity = controlsActive ? ui.activeOpacity : ui.idleOpacity;
+  const titlePinned = ui.titleVisibility === 'always' || (ui.titleVisibility === 'change' && titleFlashing);
+  const titleOpacity = (controlsActive || titlePinned) ? ui.activeOpacity : ui.idleOpacity;
+  const tapGuardActive = ui.tapGuard && visualizerEnabled && isTapGuarded;
   const toggleTimeMode = () => updateSettings('ui', {showRemaining : !ui.showRemaining});
 
   return (
@@ -245,9 +254,10 @@ const MusicPlayer = () => {
       )}
 
       {/* Preset HUD - góc trên màn hình, tách khỏi thông tin bài hát */}
-      {isInteracted && ui.showPresetName && visualizerEnabled && (
+      {isInteracted && ui.presetVisibility !== 'off' && visualizerEnabled && (
         <PresetHud
           name={currentPresetName}
+          mode={ui.presetVisibility}
           active={isInteracting}
           onPrev={visualizerControls.prevPreset}
           onNext={visualizerControls.nextPreset}
@@ -264,13 +274,13 @@ const MusicPlayer = () => {
         <TypingIntro onComplete={handleIntroComplete} />
       )}
 
-      <div className="absolute inset-x-0 bottom-0 isolate flex flex-col transition-opacity duration-300" style={{opacity : controlsOpacity}}>
+      <div className="absolute inset-x-0 bottom-0 isolate flex flex-col">
         {/* scrim — keeps title / time / icons readable over bright presets */}
         {ui.controlsBackdrop && (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/45 to-transparent" />
+          <div aria-hidden="true" className={`pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/45 to-transparent ${DIM_TRANSITION}`} style={{opacity : controlsOpacity}} />
         )}
         {showPlaylist && (
-        <div className="bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 max-h-[80vh] overflow-y-auto">
+        <div className={`bg-black bg-opacity-5 rounded-t-lg mx-4 mb-2 max-h-[80vh] overflow-y-auto ${DIM_TRANSITION}`} style={{opacity : controlsOpacity}}>
             <Sidebar
             playlist={playlist}
             currentTrack={currentTrack}
@@ -282,136 +292,143 @@ const MusicPlayer = () => {
           </div>
         )}
         <div className="bg-black bg-opacity-5 rounded-lg mx-4 mb-4 px-4 pb-4 pt-2 md:px-6">
-          {error && <div className="mb-2 text-center text-ui-sm font-medium text-red-300 text-halo">{error}</div>}
+          {error && <div className={`mb-2 text-center text-ui-sm font-medium text-red-300 text-halo ${DIM_TRANSITION}`} style={{opacity : controlsOpacity}}>{error}</div>}
 
-          <TrackTitle title={currentTrack?.title} effects={ui.titleEffects} className="mb-1" />
-
-          {/* `dark` flips the vendored Slider tokens: bright played range on a dim track */}
-          <div className="dark flex items-center gap-3">
-            <span className={`${TIME_LABEL_CLASS} text-left`}>{formatTime(currentTime)}</span>
-            <Slider
-            className="flex-1"
-            value={[progress]}
-            max={100}
-            step={1}
-            onValueChange={(value) => {
-              if(duration > 0) {
-                seek((value[0] / 100) * duration);
-              }
-            }}
-            />
-            <HintTooltip content={ui.showRemaining ? 'Show total duration' : 'Show remaining time'}>
-              <button
-                type="button"
-                onClick={toggleTimeMode}
-                className={`${TIME_LABEL_CLASS} rounded text-right transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40`}
-              >
-                {ui.showRemaining ? `−${formatTime(duration - currentTime)}` : formatTime(duration)}
-              </button>
-            </HintTooltip>
+          <div className={DIM_TRANSITION} style={{opacity : titleOpacity}}>
+            <TrackTitle title={currentTrack?.title} effects={ui.titleEffects} className="mb-1" />
           </div>
 
-          <div className="flex items-center justify-between mt-3">
-            {/* Mobile-only: playlist toggle */}
-            <div className="flex md:hidden items-center">
-              <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost" className="p-2" aria-label="Toggle playlist">
-                <ListIcon className="h-5 w-5" />
-              </Button>
-            </div>
-            {/* Desktop-only: full left controls */}
-            <div className="hidden md:flex items-center space-x-2">
-              <HintTooltip content={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'}>
-                <Button onClick={() => visualizerControls.setEnabled(v => !v)} variant="ghost">
-                  {visualizerEnabled ? <Eye className="h-4 w-4 md:h-6 md:w-6" /> : <EyeOff className="h-4 w-4 md:h-6 md:w-6" />}
-                </Button>
-              </HintTooltip>
-              <HintTooltip content="Toggle Playlist">
-                <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
-                  <ListIcon className="h-4 w-4 md:h-6 md:w-6" />
-                </Button>
-              </HintTooltip>
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                multiple
-                onChange={handleFileUpload}
-                accept="audio/*"
-                ref={fileInputRef}
+          <div className={DIM_TRANSITION} style={{opacity : controlsOpacity}}>
+            {/* `dark` flips the vendored Slider tokens: bright played range on a dim track */}
+            <div className="dark flex items-center gap-3">
+              <span className={`${TIME_LABEL_CLASS} text-left`}>{formatTime(currentTime)}</span>
+              <Slider
+              className="flex-1"
+              value={[progress]}
+              max={100}
+              step={1}
+              onValueChange={(value) => {
+                if(duration > 0) {
+                  seek((value[0] / 100) * duration);
+                }
+              }}
               />
-              <HintTooltip content="Upload Local File" shortcut={SHORTCUTS.uploadLocal.keys}>
-                <Button onClick={() => fileInputRef.current.click()} variant="ghost">
-                  <UploadIcon className="h-4 w-4 md:h-6 md:w-6" />
-                </Button>
-              </HintTooltip>
-              <HintTooltip content="Add SoundCloud Track" shortcut={SHORTCUTS.addSoundCloud.keys}>
-                <Button onClick={handleSoundCloudUpload} variant="ghost">
-                  <CloudIcon className="h-4 w-4 md:h-6 md:w-6" />
-                </Button>
-              </HintTooltip>
-            </div>
-            <div className="flex-1 flex items-center justify-center space-x-2 md:space-x-4">
-              <HintTooltip content={SHORTCUTS.prevTrack.label} shortcut={SHORTCUTS.prevTrack.keys}>
-                <Button onClick={prev} variant="ghost" className="p-2">
-                  <SkipBackIcon className="h-5 w-5 md:h-6 md:w-6" />
-                </Button>
-              </HintTooltip>
-              <HintTooltip content={isPlaying ? "Pause" : "Play"} shortcut={SHORTCUTS.togglePlay.keys}>
-                <Button onClick={toggle} variant="ghost" className="h-11 w-11 md:h-12 md:w-12 rounded-full p-0 flex items-center justify-center">
-                  {isPlaying ?
-                    <PauseIcon className="h-6 w-6 md:h-7 md:w-7" /> :
-                    <PlayIcon className="h-6 w-6 md:h-7 md:w-7" />
-                  }
-                </Button>
-              </HintTooltip>
-              <HintTooltip content={SHORTCUTS.nextTrack.label} shortcut={SHORTCUTS.nextTrack.keys}>
-                <Button onClick={next} variant="ghost" className="p-2">
-                  <SkipForwardIcon className="h-5 w-5 md:h-6 md:w-6" />
-                </Button>
+              <HintTooltip content={ui.showRemaining ? 'Show total duration' : 'Show remaining time'}>
+                <button
+                  type="button"
+                  onClick={toggleTimeMode}
+                  className={`${TIME_LABEL_CLASS} rounded text-right transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40`}
+                >
+                  {ui.showRemaining ? `−${formatTime(duration - currentTime)}` : formatTime(duration)}
+                </button>
               </HintTooltip>
             </div>
-            <div className="flex items-center space-x-2">
-              <HintTooltip content="Export Playlist">
-                <Button onClick={handleExportPlaylist} variant="ghost" className="hidden md:inline-flex">
-                  <DownloadIcon className="h-4 w-4 md:h-6 md:w-6" />
+
+            <div className="flex items-center justify-between mt-3">
+              {/* Mobile-only: playlist toggle */}
+              <div className="flex md:hidden items-center">
+                <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost" className="p-2" aria-label="Toggle playlist">
+                  <ListIcon className="h-5 w-5" />
                 </Button>
-              </HintTooltip>
-              {/* Desktop: inline volume slider */}
-              <div className="dark hidden md:block w-24">
-                <Slider
-                  value={[volume * 100]}
-                  max={100}
-                  step={1}
-                  onValueChange={(value) => setVolume(value[0] / 100)}
-                />
               </div>
-              {/* Mobile: leveled icon button → popover slider */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" className="md:hidden p-2">
-                    <VolumeIconComp className="h-5 w-5" />
+              {/* Desktop-only: full left controls */}
+              <div className="hidden md:flex items-center space-x-2">
+                <HintTooltip content={visualizerEnabled ? 'Tắt Visualizer' : 'Bật Visualizer'}>
+                  <Button onClick={() => visualizerControls.setEnabled(v => !v)} variant="ghost">
+                    {visualizerEnabled ? <Eye className="h-4 w-4 md:h-6 md:w-6" /> : <EyeOff className="h-4 w-4 md:h-6 md:w-6" />}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent side="top" align="end" className="dark w-40 p-3 bg-black/90 border border-white/20 text-white">
-                  <div className="flex items-center gap-2">
-                    <VolumeIconComp className="h-4 w-4 shrink-0 text-white/70" />
-                    <Slider
-                      value={[volume * 100]}
-                      max={100}
-                      step={1}
-                      onValueChange={(value) => setVolume(value[0] / 100)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <HintTooltip content="Settings" shortcut={SHORTCUTS.openSettings.keys}>
-                <Button onClick={() => setShowSettings(true)} variant="ghost" className="p-2 md:px-4" aria-label="Settings">
-                  <Settings2 className="h-5 w-5 md:h-6 md:w-6" />
-                </Button>
-              </HintTooltip>
+                </HintTooltip>
+                <HintTooltip content="Toggle Playlist">
+                  <Button onClick={() => setShowPlaylist(!showPlaylist)} variant="ghost">
+                    <ListIcon className="h-4 w-4 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileUpload}
+                  accept="audio/*"
+                  ref={fileInputRef}
+                />
+                <HintTooltip content="Upload Local File" shortcut={SHORTCUTS.uploadLocal.keys}>
+                  <Button onClick={() => fileInputRef.current.click()} variant="ghost">
+                    <UploadIcon className="h-4 w-4 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+                <HintTooltip content="Add SoundCloud Track" shortcut={SHORTCUTS.addSoundCloud.keys}>
+                  <Button onClick={handleSoundCloudUpload} variant="ghost">
+                    <CloudIcon className="h-4 w-4 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+              </div>
+              <div className="flex-1 flex items-center justify-center space-x-2 md:space-x-4">
+                <HintTooltip content={SHORTCUTS.prevTrack.label} shortcut={SHORTCUTS.prevTrack.keys}>
+                  <Button onClick={prev} variant="ghost" className="p-2">
+                    <SkipBackIcon className="h-5 w-5 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+                <HintTooltip content={isPlaying ? "Pause" : "Play"} shortcut={SHORTCUTS.togglePlay.keys}>
+                  <Button onClick={toggle} variant="ghost" className="h-11 w-11 md:h-12 md:w-12 rounded-full p-0 flex items-center justify-center">
+                    {isPlaying ?
+                      <PauseIcon className="h-6 w-6 md:h-7 md:w-7" /> :
+                      <PlayIcon className="h-6 w-6 md:h-7 md:w-7" />
+                    }
+                  </Button>
+                </HintTooltip>
+                <HintTooltip content={SHORTCUTS.nextTrack.label} shortcut={SHORTCUTS.nextTrack.keys}>
+                  <Button onClick={next} variant="ghost" className="p-2">
+                    <SkipForwardIcon className="h-5 w-5 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+              </div>
+              <div className="flex items-center space-x-2">
+                <HintTooltip content="Export Playlist">
+                  <Button onClick={handleExportPlaylist} variant="ghost" className="hidden md:inline-flex">
+                    <DownloadIcon className="h-4 w-4 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+                {/* Desktop: inline volume slider */}
+                <div className="dark hidden md:block w-24">
+                  <Slider
+                    value={[volume * 100]}
+                    max={100}
+                    step={1}
+                    onValueChange={(value) => setVolume(value[0] / 100)}
+                  />
+                </div>
+                {/* Mobile: leveled icon button → popover slider */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" className="md:hidden p-2">
+                      <VolumeIconComp className="h-5 w-5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="end" className="dark w-40 p-3 bg-black/90 border border-white/20 text-white">
+                    <div className="flex items-center gap-2">
+                      <VolumeIconComp className="h-4 w-4 shrink-0 text-white/70" />
+                      <Slider
+                        value={[volume * 100]}
+                        max={100}
+                        step={1}
+                        onValueChange={(value) => setVolume(value[0] / 100)}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <HintTooltip content="Settings" shortcut={SHORTCUTS.openSettings.keys}>
+                  <Button onClick={() => setShowSettings(true)} variant="ghost" className="p-2 md:px-4" aria-label="Settings">
+                    <Settings2 className="h-5 w-5 md:h-6 md:w-6" />
+                  </Button>
+                </HintTooltip>
+              </div>
             </div>
           </div>
         </div>
+        {/* tap guard — while up, the first tap on the dimmed controls only wakes
+            them (timing lives in InteractionProvider) */}
+        {tapGuardActive && <div aria-hidden="true" className="absolute inset-0 z-10" />}
       </div>
       {/* audio element is owned by PlaybackProvider */}
     </div>

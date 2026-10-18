@@ -5,8 +5,11 @@
  *                         `--ui-scale` CSS var (see `text-ui-*` in tailwind.config.js)
  *   ui.titleEffects       animated gradient + "Zuko" mosaic on the SVG track title
  *   ui.showRemaining      right-hand time shows remaining (−m:ss) instead of total
- *   ui.showPresetName     preset HUD in the top-left corner
+ *   ui.titleVisibility    'controls' dims with the bar | 'change' stays up for
+ *                         TITLE_FLASH_MS after a track change | 'always' never dims
+ *   ui.presetVisibility   preset HUD: 'off' | 'auto' (flash on change + activity) | 'always'
  *   ui.controlsBackdrop   dark gradient scrim behind the control bar
+ *   ui.tapGuard           first tap on dimmed controls only wakes them
  *   ui.activeOpacity      control bar opacity while the user is interacting
  *   ui.idleOpacity        control bar opacity after 3 s without input
  *   ui.showIntro          play TypingIntro after the first gesture
@@ -26,8 +29,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
     textScale        : 'md',
     titleEffects     : true,
     showRemaining    : true,
-    showPresetName   : true,
+    titleVisibility  : 'controls',
+    presetVisibility : 'auto',
     controlsBackdrop : true,
+    tapGuard         : true,
     activeOpacity    : 0.9,
     idleOpacity      : 0.05,
     showIntro        : true,
@@ -41,10 +46,20 @@ export const DEFAULT_SETTINGS = Object.freeze({
   }),
 });
 
+/* allowed values for string settings — anything else falls back to the default */
+export const SETTING_CHOICES = Object.freeze({
+  ui : Object.freeze({
+    textScale        : Object.keys(TEXT_SCALES),
+    titleVisibility  : ['controls', 'change', 'always'],
+    presetVisibility : ['off', 'auto', 'always'],
+  }),
+});
+
 /**
  * Merge a stored (possibly stale or hand-edited) settings object onto the
- * defaults. Unknown keys are dropped, wrong types fall back to the default,
- * so adding / renaming a field never needs a migration.
+ * defaults. Unknown keys are dropped, wrong types or values outside
+ * SETTING_CHOICES fall back to the default, so adding / renaming a field
+ * never needs a migration.
  */
 export const sanitizeSettings = (raw) => {
   const result = {};
@@ -53,11 +68,10 @@ export const sanitizeSettings = (raw) => {
     result[section] = {};
     for(const [key, fallback] of Object.entries(defaults)) {
       const value = stored?.[key];
-      result[section][key] = typeof value === typeof fallback ? value : fallback;
+      const choices = SETTING_CHOICES[section]?.[key];
+      const valid = typeof value === typeof fallback && (!choices || choices.includes(value));
+      result[section][key] = valid ? value : fallback;
     }
-  }
-  if(!(result.ui.textScale in TEXT_SCALES)) {
-    result.ui.textScale = DEFAULT_SETTINGS.ui.textScale;
   }
   return result;
 };

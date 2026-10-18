@@ -22,9 +22,21 @@ import {useSettings} from '@/providers/SettingsProvider.jsx';
 import {useVisualizer} from '@/providers/VisualizerProvider.jsx';
 
 const TEXT_SIZE_OPTIONS = [
-  {value : 'sm', label : 'Small',  className : 'text-[11px]'},
-  {value : 'md', label : 'Medium', className : 'text-[13px]'},
-  {value : 'lg', label : 'Large',  className : 'text-[15px]'},
+  {value : 'sm', label : 'Small',  className : 'font-mono text-[11px]'},
+  {value : 'md', label : 'Medium', className : 'font-mono text-[13px]'},
+  {value : 'lg', label : 'Large',  className : 'font-mono text-[15px]'},
+];
+
+const TITLE_VISIBILITY_OPTIONS = [
+  {value : 'controls', label : 'Dim with controls',    short : 'With controls', className : 'text-[13px]'},
+  {value : 'change',   label : 'Show on track change', short : 'On change',     className : 'text-[13px]'},
+  {value : 'always',   label : 'Always visible',       short : 'Always',        className : 'text-[13px]'},
+];
+
+const PRESET_VISIBILITY_OPTIONS = [
+  {value : 'off',    label : 'Hidden',                        short : 'Off',    className : 'text-[13px]'},
+  {value : 'auto',   label : 'On preset change and activity', short : 'Auto',   className : 'text-[13px]'},
+  {value : 'always', label : 'Always visible',                short : 'Always', className : 'text-[13px]'},
 ];
 
 const FPS_OPTIONS = [
@@ -82,8 +94,9 @@ const SliderRow = ({label, hint, value, format, min, max, step, disabled, onChan
   </div>
 );
 
-const ChoiceRow = ({label, hint, value, options, onChange}) => (
-  <div className="flex items-center justify-between gap-6 py-3">
+/* `stacked` puts the choices on their own full-width row — for word labels */
+const ChoiceRow = ({label, hint, value, options, onChange, stacked = false}) => (
+  <div className={stacked ? 'py-3' : 'flex items-center justify-between gap-6 py-3'}>
     <RowText label={label} hint={hint} />
     <ToggleGroup
       type="single"
@@ -91,14 +104,14 @@ const ChoiceRow = ({label, hint, value, options, onChange}) => (
       size="sm"
       value={value}
       onValueChange={(v) => v && onChange(v)}
-      className="shrink-0"
+      className={stacked ? 'mt-3 grid grid-cols-3' : 'shrink-0'}
     >
       {options.map(option => (
         <ToggleGroupItem
           key={option.value}
           value={option.value}
           aria-label={option.label}
-          className={`min-w-9 px-2.5 font-mono data-[state=on]:bg-zinc-100 data-[state=on]:text-zinc-950 ${option.className ?? 'text-xs'}`}
+          className={`min-w-9 px-2.5 data-[state=on]:bg-zinc-100 data-[state=on]:text-zinc-950 ${option.className ?? 'font-mono text-xs'}`}
         >
           {option.short ?? 'A'}
         </ToggleGroupItem>
@@ -166,6 +179,13 @@ const SettingsDialog = ({open, onOpenChange}) => {
                   checked={ui.controlsBackdrop}
                   onCheckedChange={(controlsBackdrop) => setUi({controlsBackdrop})}
                 />
+                <SwitchRow
+                  id="setting-tap-guard"
+                  label="Tap to wake controls"
+                  hint="While dimmed, the first tap only wakes the controls — no accidental skips or track picks."
+                  checked={ui.tapGuard}
+                  onCheckedChange={(tapGuard) => setUi({tapGuard})}
+                />
                 <SliderRow
                   label="Opacity while active"
                   value={ui.activeOpacity}
@@ -188,12 +208,21 @@ const SettingsDialog = ({open, onOpenChange}) => {
               </Section>
 
               <Section title="Overlays">
-                <SwitchRow
-                  id="setting-show-preset"
-                  label="Show preset name"
-                  hint="Top-left corner, flashes on every preset change."
-                  checked={ui.showPresetName}
-                  onCheckedChange={(showPresetName) => setUi({showPresetName})}
+                <ChoiceRow
+                  stacked
+                  label="Track title"
+                  hint="Keep the title lit while the rest of the controls dim — permanently, or for a few seconds after each new track."
+                  value={ui.titleVisibility}
+                  options={TITLE_VISIBILITY_OPTIONS}
+                  onChange={(titleVisibility) => setUi({titleVisibility})}
+                />
+                <ChoiceRow
+                  stacked
+                  label="Preset name"
+                  hint="Auto flashes it on every preset change and while you interact."
+                  value={ui.presetVisibility}
+                  options={PRESET_VISIBILITY_OPTIONS}
+                  onChange={(presetVisibility) => setUi({presetVisibility})}
                 />
                 <SwitchRow
                   id="setting-show-intro"
