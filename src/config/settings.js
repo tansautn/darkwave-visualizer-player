@@ -55,11 +55,25 @@ export const SETTING_CHOICES = Object.freeze({
   }),
 });
 
+/* numeric bounds — stored values are clamped into them; also the Settings
+   slider ranges. activeOpacity tops out at 0.9 so the controls (and the
+   backdrop behind them) always stay semi-transparent over the visualizer. */
+export const SETTING_RANGES = Object.freeze({
+  ui : Object.freeze({
+    activeOpacity : [0.4, 0.9],
+    idleOpacity   : [0, 0.5],
+  }),
+  visualizer : Object.freeze({
+    cycleInterval : [5000, 120000],
+    blendTime     : [0, 10],
+  }),
+});
+
 /**
  * Merge a stored (possibly stale or hand-edited) settings object onto the
  * defaults. Unknown keys are dropped, wrong types or values outside
- * SETTING_CHOICES fall back to the default, so adding / renaming a field
- * never needs a migration.
+ * SETTING_CHOICES fall back to the default, numbers are clamped into
+ * SETTING_RANGES, so adding / renaming a field never needs a migration.
  */
 export const sanitizeSettings = (raw) => {
   const result = {};
@@ -69,8 +83,15 @@ export const sanitizeSettings = (raw) => {
     for(const [key, fallback] of Object.entries(defaults)) {
       const value = stored?.[key];
       const choices = SETTING_CHOICES[section]?.[key];
-      const valid = typeof value === typeof fallback && (!choices || choices.includes(value));
-      result[section][key] = valid ? value : fallback;
+      const range = SETTING_RANGES[section]?.[key];
+      const valid = typeof value === typeof fallback
+        && (typeof value !== 'number' || Number.isFinite(value))
+        && (!choices || choices.includes(value));
+      let next = valid ? value : fallback;
+      if(range) {
+        next = Math.min(range[1], Math.max(range[0], next));
+      }
+      result[section][key] = next;
     }
   }
   return result;

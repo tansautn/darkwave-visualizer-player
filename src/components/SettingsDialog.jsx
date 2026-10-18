@@ -16,6 +16,7 @@ import {Slider} from '@/components/ui/slider';
 import {Switch} from '@/components/ui/switch';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {ToggleGroup, ToggleGroupItem} from '@/components/ui/toggle-group';
+import {SETTING_RANGES} from '@/config/settings';
 import {SHORTCUTS} from '@/config/shortcuts';
 import {CURRENT_VERSION} from '@/playlists/default';
 import {useSettings} from '@/providers/SettingsProvider.jsx';
@@ -44,6 +45,9 @@ const FPS_OPTIONS = [
   {value : '60', label : '60 fps',   short : '60'},
   {value : '30', label : '30 fps',   short : '30'},
 ];
+
+const UI_RANGES = SETTING_RANGES.ui;
+const VISUALIZER_RANGES = SETTING_RANGES.visualizer;
 
 const percent = (v) => `${Math.round(v * 100)}%`;
 const seconds = (digits) => (v) => `${v.toFixed(digits)} s`;
@@ -190,8 +194,8 @@ const SettingsDialog = ({open, onOpenChange}) => {
                   label="Opacity while active"
                   value={ui.activeOpacity}
                   format={percent}
-                  min={0.4}
-                  max={1}
+                  min={UI_RANGES.activeOpacity[0]}
+                  max={UI_RANGES.activeOpacity[1]}
                   step={0.05}
                   onChange={(activeOpacity) => setUi({activeOpacity})}
                 />
@@ -200,8 +204,8 @@ const SettingsDialog = ({open, onOpenChange}) => {
                   hint="After 3 s without mouse, touch or keyboard input."
                   value={ui.idleOpacity}
                   format={percent}
-                  min={0}
-                  max={0.5}
+                  min={UI_RANGES.idleOpacity[0]}
+                  max={UI_RANGES.idleOpacity[1]}
                   step={0.01}
                   onChange={(idleOpacity) => setUi({idleOpacity})}
                 />
@@ -281,8 +285,8 @@ const SettingsDialog = ({open, onOpenChange}) => {
                   label="Cycle interval"
                   value={visualizer.cycleInterval / 1000}
                   format={seconds(0)}
-                  min={5}
-                  max={120}
+                  min={VISUALIZER_RANGES.cycleInterval[0] / 1000}
+                  max={VISUALIZER_RANGES.cycleInterval[1] / 1000}
                   step={1}
                   disabled={!visualizer.autoCycle}
                   onChange={(v) => setVisualizer({cycleInterval : v * 1000})}
@@ -299,8 +303,8 @@ const SettingsDialog = ({open, onOpenChange}) => {
                   hint="Cross-fade length between presets."
                   value={visualizer.blendTime}
                   format={seconds(1)}
-                  min={0}
-                  max={10}
+                  min={VISUALIZER_RANGES.blendTime[0]}
+                  max={VISUALIZER_RANGES.blendTime[1]}
                   step={0.1}
                   onChange={(blendTime) => setVisualizer({blendTime})}
                 />
