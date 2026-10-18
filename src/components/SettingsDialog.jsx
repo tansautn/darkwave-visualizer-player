@@ -177,11 +177,11 @@ const SettingsDialog = ({open, onOpenChange}) => {
 
               <Section title="Controls">
                 <SwitchRow
-                  id="setting-controls-backdrop"
+                  id="setting-controls-scrim"
                   label="Backdrop behind controls"
-                  hint="Dark gradient so text stays readable on bright presets."
-                  checked={ui.controlsBackdrop}
-                  onCheckedChange={(controlsBackdrop) => setUi({controlsBackdrop})}
+                  hint="Dark gradient for extra contrast on bright presets — hides more of the visualizer."
+                  checked={ui.controlsScrim}
+                  onCheckedChange={(controlsScrim) => setUi({controlsScrim})}
                 />
                 <SwitchRow
                   id="setting-tap-guard"

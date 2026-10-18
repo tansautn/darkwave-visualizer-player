@@ -8,7 +8,11 @@
  *   ui.titleVisibility    'controls' dims with the bar | 'change' stays up for
  *                         TITLE_FLASH_MS after a track change | 'always' never dims
  *   ui.presetVisibility   preset HUD: 'off' | 'auto' (flash on change + activity) | 'always'
- *   ui.controlsBackdrop   dark gradient scrim behind the control bar
+ *   ui.controlsScrim      dark gradient behind the control bar. Off by default:
+ *                         the controls stay see-through like the original UI;
+ *                         title outline + .text-halo carry the contrast.
+ *                         (Was `controlsBackdrop`, default on — renamed so stored
+ *                         `true` values from that version fall back to off.)
  *   ui.tapGuard           first tap on dimmed controls only wakes them
  *   ui.activeOpacity      control bar opacity while the user is interacting
  *   ui.idleOpacity        control bar opacity after 3 s without input
@@ -31,7 +35,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     showRemaining    : true,
     titleVisibility  : 'controls',
     presetVisibility : 'auto',
-    controlsBackdrop : true,
+    controlsScrim    : false,
     tapGuard         : true,
     activeOpacity    : 0.9,
     idleOpacity      : 0.05,

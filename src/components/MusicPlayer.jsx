@@ -276,7 +276,7 @@ const MusicPlayer = () => {
 
       <div className="absolute inset-x-0 bottom-0 isolate flex flex-col">
         {/* scrim — keeps title / time / icons readable over bright presets */}
-        {ui.controlsBackdrop && (
+        {ui.controlsScrim && (
           <div aria-hidden="true" className={`pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/45 to-transparent ${DIM_TRANSITION}`} style={{opacity : controlsOpacity}} />
         )}
         {showPlaylist && (
