@@ -7,6 +7,12 @@
     <meta content="Darkwave visualizer player | By Zuko" name="description" />
     <meta content="Zuko" name="author" />
     <meta content="/og-image.png" property="og:image" />
+    <!-- The player is dark by design. color-scheme tells the browser (scrollbars,
+         form controls, first paint) and dark-mode extensions; darkreader-lock stops
+         Dark Reader from re-theming it — its dynamic mode turns the see-through
+         bg-black/5 bars opaque and inverts the SVG title's light gradient. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="darkreader-lock" />
     <link rel="icon" type="image/ico" href="/favicon.ico" />
   <script>
     (function () {

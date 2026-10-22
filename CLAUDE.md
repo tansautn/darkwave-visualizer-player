@@ -79,6 +79,7 @@ Hot keys (handler in `MusicPlayer.jsx`, display labels in `src/config/shortcuts.
 - Fonts are self-hosted via `@fontsource/be-vietnam-pro` (`font-ui`, Vietnamese-first sans) and `@fontsource/roboto-mono` (`font-mono`), imported in `src/main.jsx`.
 - Player text uses the `text-ui-*` sizes from `tailwind.config.js`; they multiply by the `--ui-scale` CSS var that MusicPlayer sets from Settings → Text size.
 - Small text drawn straight over the visualizer gets `.text-halo` (`src/index.css`).
+- The page declares itself dark (`<meta name="color-scheme" content="dark">` + `html { color-scheme: dark }`) and carries `<meta name="darkreader-lock">` in `index.html`. Keep both: Dark Reader's dynamic mode otherwise turns the see-through `bg-black/5` bars opaque and inverts the SVG title's light gradient (seen in Firefox).
 - Dimming is applied per region in MusicPlayer (scrim, playlist, title, transport rows), not on the whole control container — that is what lets Settings → Track title stay lit (`always`, or `TITLE_FLASH_MS` after a track change) while the rest dims. `useFlashOnChange` (`src/hooks/`) drives both the title and preset flashes.
 
 ### shadcn/ui components
